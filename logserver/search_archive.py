@@ -8,6 +8,7 @@ import gzip
 from datetime import datetime, timezone, timedelta
 from back_client import fetch_log_array
 from utils import is_authenticated, get_unique_values
+import pytz
 
 def get_unique_values(rows, col_idx):
     return sorted(set(row[col_idx] for row in rows if len(row) > col_idx and row[col_idx]))
@@ -110,13 +111,41 @@ def archive_search():
     selected_pid = request.args.get('pid', '')
     msgonly_filter = request.args.get('msgonly_filter', '')
 
-    # Initialize default dates
-    now = datetime.now()
-    default_start_date = (now - timedelta(minutes=5)).strftime('%Y-%m-%dT%H:%M:%S')
-    default_end_date = now.strftime('%Y-%m-%dT%H:%M:%S')
+    # Get timezone offset from request
+    tz_offset = request.args.get('timezone_offset', '0')
+    try:
+        tz_offset = int(tz_offset)
+    except ValueError:
+        tz_offset = 0
 
-    start_date = request.args.get('start_date', default_start_date)
-    end_date = request.args.get('end_date', default_end_date)
+    # Initialize default dates in UTC
+    now_utc = datetime.now(timezone.utc)
+    default_start_date_utc = (now_utc - timedelta(minutes=5))
+    default_end_date_utc = now_utc
+
+    # Convert to local time for display
+    local_tz = timezone(timedelta(minutes=tz_offset))
+    default_start_date = default_start_date_utc.astimezone(local_tz).strftime('%Y-%m-%dT%H:%M:%S')
+    default_end_date = default_end_date_utc.astimezone(local_tz).strftime('%Y-%m-%dT%H:%M:%S')
+
+    # Get dates from request or use defaults
+    start_date_str = request.args.get('start_date', default_start_date)
+    end_date_str = request.args.get('end_date', default_end_date)
+
+    # Convert input dates to UTC for comparison
+    try:
+        start_date_local = datetime.strptime(start_date_str, '%Y-%m-%dT%H:%M:%S')
+        start_date_local = local_tz.localize(start_date_local)
+        start_date_utc = start_date_local.astimezone(timezone.utc)
+    except ValueError:
+        start_date_utc = default_start_date_utc
+
+    try:
+        end_date_local = datetime.strptime(end_date_str, '%Y-%m-%dT%H:%M:%S')
+        end_date_local = local_tz.localize(end_date_local)
+        end_date_utc = end_date_local.astimezone(timezone.utc)
+    except ValueError:
+        end_date_utc = default_end_date_utc
 
     try:
         num_lines = int(request.args.get('num_lines', str(DEFAULT_NUM_LINES)))
@@ -138,10 +167,9 @@ def archive_search():
         log_rows = [r for r in log_rows if r[6] == selected_pid]
     if msgonly_filter:
         log_rows = [r for r in log_rows if msgonly_filter.lower() in r[7].lower()]
-    if start_date:
-        log_rows = [r for r in log_rows if r[0] >= start_date]
-    if end_date:
-        log_rows = [r for r in log_rows if r[0] <= end_date]
+
+    # Filter by date range in UTC
+    log_rows = [r for r in log_rows if start_date_utc.strftime('%Y-%m-%dT%H:%M:%S') <= r[0] <= end_date_utc.strftime('%Y-%m-%dT%H:%M:%S')]
     log_rows = log_rows[-num_lines:]
 
     return render_template(
@@ -163,8 +191,9 @@ def archive_search():
         num_lines=num_lines,
         num_lines_options=NUM_LINES_OPTIONS,
         msgonly_filter=msgonly_filter,
-        start_date=start_date,
-        end_date=end_date,
+        start_date=start_date_str,
+        end_date=end_date_str,
+        timezone_offset=tz_offset,
         request=request
     )
 

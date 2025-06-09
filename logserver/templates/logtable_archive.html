@@ -13,12 +13,12 @@
     <div class="col-auto">
       <label for="start_date" class="form-label mb-0">Start date:</label>
       <input class="form-control form-control-sm" type="datetime-local" id="start_date" name="start_date"
-        value="{{ start_date or (now_utc_minus_5m.strftime('%Y-%m-%dT%H:%M') if now_utc_minus_5m else '') }}" style="min-width:170px;" />
+        value="{{ start_date }}" style="min-width:170px;" />
     </div>
     <div class="col-auto">
       <label for="end_date" class="form-label mb-0">End date:</label>
       <input class="form-control form-control-sm" type="datetime-local" id="end_date" name="end_date"
-        value="{{ end_date or (now_utc.strftime('%Y-%m-%dT%H:%M') if now_utc else '') }}" style="min-width:170px;" />
+        value="{{ end_date }}" style="min-width:170px;" />
     </div>
     <div class="col-auto">
       <label for="num_lines" class="form-label mb-0">Lines:</label>
@@ -35,7 +35,7 @@
       <span class="small text-muted">Rows shown: {{ rows|length }} / {{ total_rows }}</span>
     </div>
     <!-- Hidden field for user's timezone offset (in minutes) -->
-    <input type="hidden" id="timezone_offset" name="timezone_offset" value="">
+    <input type="hidden" id="timezone_offset" name="timezone_offset" value="{{ timezone_offset }}">
   </div>
   <script>
     // Set timezone offset when page loads
