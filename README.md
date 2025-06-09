@@ -1,65 +1,108 @@
 # Syslog Web Viewer
 
-![Alt text](/screenshot.jpeg?raw=true "Optional Title")
-
-A comprehensive web-based system log viewer that provides real-time monitoring, archiving, and search capabilities for system logs.
+A web-based syslog viewer that provides real-time log monitoring and historical log search capabilities.
 
 ## Features
 
-### Core Functionality
-- Real-time log viewing and monitoring
-- Log archiving and rotation
-- Search capabilities for both live and archived logs
-- Filtering by various log attributes (host, facility, level, program, PID)
-- Configurable refresh intervals for live updates
+- **Live View**: Real-time monitoring of syslog entries with automatic refresh
+- **Archive Search**: Search through historical logs with date range filtering
+- **Files Management**: View and manage log files, including manual rotation
+- **Log Rotation**: Automatic log rotation based on size and age, with configurable retention policies
+- **Embedded syslog-ng**: Built-in syslog server for direct log collection
+- **Filtering**: Filter logs by host, facility, level, program, and PID
+- **Message Search**: Search within log messages
+- **Responsive Design**: Modern UI that works on both desktop and mobile devices
 
-### Architecture
-- Frontend: Flask-based web interface with a modern UI
-- Backend: Multiple components working together:
-  - `syslog-ng` for log collection and processing
-  - `back.py` for log buffering and real-time monitoring
-  - `front.py` for web interface and authentication
-  - `rotate.py` for log rotation management
+## How Live Search Works
 
-### Key Features
-- Real-time log monitoring with configurable refresh rates
-- Log filtering by multiple criteria:
-  - Host
-  - Facility
-  - Log level
-  - Program
-  - Process ID (PID)
-- Message content filtering
-- Configurable number of lines to display
-- Log rotation with size and age-based policies
-- Authentication system for secure access
+The live search functionality is implemented through two main components:
 
-### Technical Details
-- Uses `syslog-ng` for log collection on port 7322 (UDP)
-- Web interface runs on port 7321
-- Implements log rotation with configurable:
-  - Maximum log size (100MB)
-  - Maximum age (30 days)
-  - Total storage limit (500MB)
-- Uses inotify for efficient file monitoring
-- Implements a buffer system to manage log data in memory
+1. `back.py` continuously monitors the log file using inotify, reads new lines, parses them into a structured format (timestamp, host, facility, etc.), and maintains a fixed-size buffer in memory (default 1000 lines) by removing oldest entries when the buffer is full.
 
-### Deployment
-- Containerized using Docker
-- Uses Fedora 42 as the base image
-- Includes a docker-compose configuration for easy deployment
-- Persists logs in a mounted volume
+2. `front.py` provides a web page that displays the logs and automatically refreshes every 2 seconds by calling an API endpoint that returns the latest buffer contents from `back.py`.
+
+## Installation
+
+1. Clone the repository:
+```bash
+git clone https://github.com/ptempier/syslog-web-viewer.git
+cd syslog-web-viewer
+```
+
+2. Build and run with Docker:
+```bash
+docker build -t syslog-web-viewer .
+docker run -d --name logserver -p 7321:7321 -p 7322:7322/udp -v /var/log:/var/log syslog-web-viewer
+```
+
+Or using docker-compose:
+```bash
+docker-compose up -d
+```
 
 ## Usage
 
-The application is designed to be a comprehensive log management solution, particularly useful for system administrators and developers who need to monitor and analyze system logs in real-time while maintaining historical records.
+Access the web interface at `http://localhost:7321`
 
-### Ports
-- 7321: Web interface
-- 7322: UDP port for syslog-ng log collection
+### Live View
+- Real-time monitoring of syslog entries
+- Configurable refresh interval
+- Automatic scrolling to new entries
+- Filter by host, facility, level, program, and PID
 
-### Default Credentials
-- Username: admin
-- Password: changeme
+### Archive Search
+- Search through historical logs
+- Date range selection with timezone support
+- Filter by host, facility, level, program, and PID
+- Message content search
+- Configurable number of results
 
-**Note:** It is recommended to change the default credentials in production environments. 
+### Files Management
+- View all log files with their sizes and last modified dates
+- Manual log rotation with "Rotate Now" button
+- Automatic log rotation based on size and age
+- Compressed archive files with date ranges in filenames
+
+### Log Rotation
+- Automatic rotation based on file size and age
+- Configurable rotation policies:
+  - Maximum file size
+  - Maximum age
+  - Retention period
+  - Minimum number of files to keep
+- Compressed archive files with date ranges
+- Manual rotation trigger
+
+### Embedded syslog-ng Server
+- Built-in syslog server on port 7322 (UDP)
+- Direct log collection from network devices
+- No additional syslog server required
+- Configurable through web interface
+
+## Configuration
+
+The application can be configured through the web interface:
+
+- Log file paths
+- Rotation settings (size, age, retention)
+- Buffer settings
+- Authentication credentials
+- syslog-ng settings
+
+## Development
+
+### Project Structure
+```
+logserver/
+├── front.py          # Web interface and routes
+├── back.py          # Log monitoring and processing
+├── rotate.py        # Log rotation and archiving
+├── search_live.py   # Live search functionality
+├── search_archive.py # Archive search functionality
+├── files.py         # Files management functionality
+├── settings.py      # Configuration management
+├── utils.py         # Shared utilities
+├── templates/       # HTML templates
+└── static/         # CSS and JavaScript files
+```
+
