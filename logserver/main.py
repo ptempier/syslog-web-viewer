@@ -4,7 +4,7 @@ import sys
 import os
 import signal
 import logging
-from config_manager import config_manager
+from settings import settings
 
 def script_path(filename):
     # Get the directory where main.py is located and join it with filename
@@ -30,7 +30,7 @@ def signal_handler(signum, frame):
     """Handle SIGHUP to reload configuration."""
     if signum == signal.SIGHUP:
         logging.info("Received SIGHUP, reloading configuration...")
-        config_manager.load_config()
+        settings.load_config()
         # TODO: Propagate configuration changes to other components
 
 def main():
