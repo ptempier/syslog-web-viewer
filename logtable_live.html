@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block content %}
+<ul class="nav nav-tabs mb-3">
+  <li class="nav-item">
+    <a class="nav-link active" href="{{ url_for('live') }}">Live</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="{{ url_for('archive') }}">Archive</a>
+  </li>
+</ul>
+<form method="get" id="live-filter-form" class="mb-3">
+  <div class="row mb-2">
+    <div class="col-auto">
+      <select class="form-select form-select-sm" name="num_lines" onchange="this.form.submit()">
+        {% for n in num_lines_options %}
+        <option value="{{ n }}" {% if num_lines == n %}selected{% endif %}>{{ n }} lines</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-auto">
+      <select class="form-select form-select-sm" name="refresh" onchange="this.form.submit()">
+        <option value="off" {% if refresh == "off" %}selected{% endif %}>No auto-refresh</option>
+        <option value="2000" {% if refresh == "2000" %}selected{% endif %}>2s</option>
+        <option value="5000" {% if refresh == "5000" %}selected{% endif %}>5s</option>
+        <option value="10000" {% if refresh == "10000" %}selected{% endif %}>10s</option>
+      </select>
+    </div>
+    <div class="col-auto">
+      <button class="btn btn-primary btn-sm" type="submit">Filter</button>
+    </div>
+    <div class="col-auto align-self-center">
+      <span class="small text-muted">Rows shown: {{ rows|length }} / {{ total_rows }}</span>
+    </div>
+  </div>
+  <table class="table table-bordered table-sm align-middle" style="margin-bottom:0;">
+    <thead>
+      <tr>
+        <th style="min-width:200px;">ISODATE</th>
+        <th>HOST</th>
+        <th>FACILITY</th>
+        <th>LEVEL</th>
+        <th style="min-width:140px;">PROGRAM</th>
+        <th>PID</th>
+        <th>MESSAGE</th>
+      </tr>
+      <tr>
+        <th>
+          <!-- No filter for ISODATE in live -->
+        </th>
+        <th>
+          <select class="form-select form-select-sm" name="host" onchange="this.form.submit()">
+            <option value="">All</option>
+            {% for v in hosts %}
+            <option value="{{ v }}" {% if selected_host == v %}selected{% endif %}>{{ v }}</option>
+            {% endfor %}
+          </select>
+        </th>
+        <th>
+          <select class="form-select form-select-sm" name="facility" onchange="this.form.submit()">
+            <option value="">All</option>
+            {% for v in facilities %}
+            <option value="{{ v }}" {% if selected_facility == v %}selected{% endif %}>{{ v }}</option>
+            {% endfor %}
+          </select>
+        </th>
+        <th>
+          <select class="form-select form-select-sm" name="level" onchange="this.form.submit()">
+            <option value="">All</option>
+            {% for v in levels %}
+            <option value="{{ v }}" {% if selected_level == v %}selected{% endif %}>{{ v }}</option>
+            {% endfor %}
+          </select>
+        </th>
+        <th>
+          <select class="form-select form-select-sm" name="program" onchange="this.form.submit()">
+            <option value="">All</option>
+            {% for v in programs %}
+            <option value="{{ v }}" {% if selected_program == v %}selected{% endif %}>{{ v }}</option>
+            {% endfor %}
+          </select>
+        </th>
+        <th>
+          <select class="form-select form-select-sm" name="pid" onchange="this.form.submit()">
+            <option value="">All</option>
+            {% for v in pids %}
+            <option value="{{ v }}" {% if selected_pid == v %}selected{% endif %}>{{ v }}</option>
+            {% endfor %}
+          </select>
+        </th>
+        <th>
+          <input class="form-control form-control-sm" name="msgonly_filter" type="text" placeholder="Contains..." value="{{ msgonly_filter }}" onchange="this.form.submit()">
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        <td style="min-width:200px;">{{ row[0] }}</td>
+        <td>{{ row[2] }}</td>
+        <td>{{ row[3] }}</td>
+        <td>{{ row[4] }}</td>
+        <td style="min-width:140px;">{{ row[5] }}</td>
+        <td>{{ row[6] }}</td>
+        <td>{{ row[7] }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</form>
+{% if refresh != "off" %}
+<script>
+  setTimeout(function() {
+    document.getElementById('live-filter-form').submit();
+  }, {{ refresh }});
+</script>
+{% endif %}
+{% endblock %}

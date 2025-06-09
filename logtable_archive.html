@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block content %}
+<ul class="nav nav-tabs mb-3">
+  <li class="nav-item">
+    <a class="nav-link" href="{{ url_for('live') }}">Live</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link active" href="{{ url_for('archive') }}">Archive</a>
+  </li>
+</ul>
+<form method="get" id="archive-filter-form" class="mb-3">
+  <div class="row mb-2 align-items-end">
+    <div class="col-auto">
+      <label for="start_date" class="form-label mb-0">Start date:</label>
+      <input class="form-control form-control-sm" type="datetime-local" id="start_date" name="start_date"
+        value="{{ start_date or (now_utc_minus_5m.strftime('%Y-%m-%dT%H:%M') if now_utc_minus_5m else '') }}" style="min-width:170px;" />
+    </div>
+    <div class="col-auto">
+      <label for="end_date" class="form-label mb-0">End date:</label>
+      <input class="form-control form-control-sm" type="datetime-local" id="end_date" name="end_date"
+        value="{{ end_date or (now_utc.strftime('%Y-%m-%dT%H:%M') if now_utc else '') }}" style="min-width:170px;" />
+    </div>
+    <div class="col-auto">
+      <label for="num_lines" class="form-label mb-0">Lines:</label>
+      <select class="form-select form-select-sm" id="num_lines" name="num_lines" onchange="this.form.submit()">
+        {% for n in num_lines_options %}
+        <option value="{{ n }}" {% if num_lines == n %}selected{% endif %}>{{ n }} lines</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-auto">
+      <button class="btn btn-primary btn-sm" type="submit">Filter</button>
+    </div>
+    <div class="col-auto align-self-center">
+      <span class="small text-muted">Rows shown: {{ rows|length }} / {{ total_rows }}</span>
+    </div>
+    <!-- Hidden field for user's timezone offset (in minutes) -->
+    <input type="hidden" id="timezone_offset" name="timezone_offset" value="">
+  </div>
+  <script>
+    document.getElementById('timezone_offset').value = new Date().getTimezoneOffset();
+  </script>
+  <table class="table table-bordered table-sm align-middle" style="margin-bottom:0;">
+    <thead>
+      <tr>
+        <th style="min-width:200px;">ISODATE</th>
+        <th>HOST</th>
+        <th>FACILITY</th>
+        <th>LEVEL</th>
+        <th style="min-width:140px;">PROGRAM</th>
+        <th>PID</th>
+        <th>MESSAGE</th>
+      </tr>
+      <tr>
+        <th>
+          <!-- (empty: date filters are now at the top) -->
+        </th>
+        <th>
+          <select class="form-select form-select-sm" name="host" onchange="this.form.submit()">
+            <option value="">All</option>
+            {% for v in hosts %}
+            <option value="{{ v }}" {% if selected_host == v %}selected{% endif %}>{{ v }}</option>
+            {% endfor %}
+          </select>
+        </th>
+        <th>
+          <select class="form-select form-select-sm" name="facility" onchange="this.form.submit()">
+            <option value="">All</option>
+            {% for v in facilities %}
+            <option value="{{ v }}" {% if selected_facility == v %}selected{% endif %}>{{ v }}</option>
+            {% endfor %}
+          </select>
+        </th>
+        <th>
+          <select class="form-select form-select-sm" name="level" onchange="this.form.submit()">
+            <option value="">All</option>
+            {% for v in levels %}
+            <option value="{{ v }}" {% if selected_level == v %}selected{% endif %}>{{ v }}</option>
+            {% endfor %}
+          </select>
+        </th>
+        <th>
+          <select class="form-select form-select-sm" name="program" onchange="this.form.submit()">
+            <option value="">All</option>
+            {% for v in programs %}
+            <option value="{{ v }}" {% if selected_program == v %}selected{% endif %}>{{ v }}</option>
+            {% endfor %}
+          </select>
+        </th>
+        <th>
+          <select class="form-select form-select-sm" name="pid" onchange="this.form.submit()">
+            <option value="">All</option>
+            {% for v in pids %}
+            <option value="{{ v }}" {% if selected_pid == v %}selected{% endif %}>{{ v }}</option>
+            {% endfor %}
+          </select>
+        </th>
+        <th>
+          <input class="form-control form-control-sm" name="msgonly_filter" type="text" placeholder="Contains..." value="{{ msgonly_filter }}" onchange="this.form.submit()">
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        <td style="min-width:200px;">{{ row[0] }}</td>
+        <td>{{ row[2] }}</td>
+        <td>{{ row[3] }}</td>
+        <td>{{ row[4] }}</td>
+        <td style="min-width:140px;">{{ row[5] }}</td>
+        <td>{{ row[6] }}</td>
+        <td>{{ row[7] }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</form>
+{% endblock %}
