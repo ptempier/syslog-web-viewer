@@ -3,7 +3,7 @@ FROM fedora:42
 RUN dnf --setopt=install_weak_deps='False' install -y syslog-ng
 RUN dnf --setopt=install_weak_deps='False' install -y procps pkill
 #RUN dnf -y install wget curl
-RUN dnf --setopt=install_weak_deps='False' install -y python3-flask python3-inotify
+RUN dnf --setopt=install_weak_deps='False' install -y python3-flask python3-inotify python3-pytz
 
 RUN mkdir -p /logserver/
 RUN mkdir -p /logserver/static/
