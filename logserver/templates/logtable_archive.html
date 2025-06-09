@@ -44,7 +44,7 @@
     // Convert UTC dates to local timezone when page loads
     function convertUTCToLocal(input) {
       if (input.value) {
-        // Parse the UTC date string and create a Date object
+        // Parse the UTC date string
         const [datePart, timePart] = input.value.split('T');
         const [year, month, day] = datePart.split('-');
         const [hours, minutes] = timePart.split(':');
@@ -53,12 +53,11 @@
         const date = new Date(Date.UTC(year, month - 1, day, hours, minutes));
         
         // Format the date in local timezone
-        const localDate = new Date(date);
-        const year2 = localDate.getFullYear();
-        const month2 = String(localDate.getMonth() + 1).padStart(2, '0');
-        const day2 = String(localDate.getDate()).padStart(2, '0');
-        const hours2 = String(localDate.getHours()).padStart(2, '0');
-        const minutes2 = String(localDate.getMinutes()).padStart(2, '0');
+        const year2 = date.getFullYear();
+        const month2 = String(date.getMonth() + 1).padStart(2, '0');
+        const day2 = String(date.getDate()).padStart(2, '0');
+        const hours2 = String(date.getHours()).padStart(2, '0');
+        const minutes2 = String(date.getMinutes()).padStart(2, '0');
         
         input.value = `${year2}-${month2}-${day2}T${hours2}:${minutes2}`;
       }
@@ -75,15 +74,12 @@
         // Create a Date object in local timezone
         const date = new Date(year, month - 1, day, hours, minutes);
         
-        // Convert to UTC
-        const utcDate = new Date(date.getTime() - (date.getTimezoneOffset() * 60000));
-        
         // Format the date in UTC
-        const year2 = utcDate.getUTCFullYear();
-        const month2 = String(utcDate.getUTCMonth() + 1).padStart(2, '0');
-        const day2 = String(utcDate.getUTCDate()).padStart(2, '0');
-        const hours2 = String(utcDate.getUTCHours()).padStart(2, '0');
-        const minutes2 = String(utcDate.getUTCMinutes()).padStart(2, '0');
+        const year2 = date.getUTCFullYear();
+        const month2 = String(date.getUTCMonth() + 1).padStart(2, '0');
+        const day2 = String(date.getUTCDate()).padStart(2, '0');
+        const hours2 = String(date.getUTCHours()).padStart(2, '0');
+        const minutes2 = String(date.getUTCMinutes()).padStart(2, '0');
         
         input.value = `${year2}-${month2}-${day2}T${hours2}:${minutes2}:00`;
       }
