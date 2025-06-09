@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 import os
-import signal
 import logging
 from flask import render_template, request, redirect, url_for, flash
 from datetime import datetime
 from settings import LOG_FILE
+from rotate import rotate_log
 
 def files_view():
     """Display the files list page."""
@@ -38,10 +38,7 @@ def files_view():
 def rotate_now():
     """Manually trigger log rotation."""
     try:
-        # Send SIGHUP to rotate.py process
-        with open('/tmp/rotate.pid', 'r') as f:
-            rotate_pid = int(f.read().strip())
-        os.kill(rotate_pid, signal.SIGHUP)
+        rotate_log()
         flash('Log rotation triggered successfully', 'success')
     except Exception as e:
         flash(f'Failed to trigger log rotation: {str(e)}', 'danger')
