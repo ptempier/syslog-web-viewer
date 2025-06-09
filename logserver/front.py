@@ -3,8 +3,9 @@ import logging
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 
 from settings import (
-    SECRET_KEY, LOG_LEVEL, AUTH_USERNAME, AUTH_PASSWORD
+    SECRET_KEY, LOG_LEVEL, AUTH_USERNAME, AUTH_PASSWORD, settings
 )
+from config_manager import config_manager
 
 # Map our custom levels to Python's logging
 LOG_LEVELS = {
@@ -65,6 +66,23 @@ def api_live():
 @app.route('/api/archive')
 def api_archive():
     return search_archive.api_archive()
+
+@app.route('/configure', methods=['GET', 'POST'])
+def configure():
+    if not is_authenticated():
+        return redirect(url_for('login'))
+    
+    if request.method == 'POST':
+        # Save configuration
+        settings.save_config(request.form)
+        # Reload configuration in all processes
+        settings.reload_config()
+        flash('Configuration saved and reloaded')
+        return redirect(url_for('configure'))
+    
+    # Get current configuration
+    config = settings.get_config_dict()
+    return render_template('configure.html', config=config)
 
 if __name__ == '__main__':
     logging.info("Starting Flask frontend.")
