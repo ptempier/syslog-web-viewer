@@ -132,9 +132,14 @@ def read_log_file(file_path, start_date_utc, end_date_utc, local_tz, utc):
                     while len(parts) < 8:
                         parts.append("")
                     
-                    # Parse and convert log date to UTC
+                    # Parse log date and convert to UTC if needed
                     log_date = parse_log_date(parts[0])
-                    log_date = local_tz.localize(log_date).astimezone(utc)
+                    if log_date.tzinfo is None:
+                        # If date is naive, assume it's in local time and convert to UTC
+                        log_date = local_tz.localize(log_date).astimezone(utc)
+                    else:
+                        # If date already has timezone, just convert to UTC
+                        log_date = log_date.astimezone(utc)
                     
                     # Check if date is in range
                     if start_date_utc <= log_date <= end_date_utc:
