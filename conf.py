@@ -13,9 +13,7 @@ AUTH_USERNAME = "admin"
 AUTH_PASSWORD = "changeme"
 SECRET_KEY = "changethissecret"  # for Flask session
 
-# Log rotation
-ROTATE_INTERVAL_SECONDS = 120  # 2 minutes (configurable)
-
+# Log rotation pattern and retention
 ROTATED_LOG_PATTERN = "/var/log/messages.*-to-*.gz"
 ROTATED_LOG_DELETE_OLDEST = True    # Set to True to enable deletion of oldest .gz after each rotation
 ROTATED_LOG_DELETE_MIN_COUNT = 20   # Minimum number of gz files to keep before deleting
@@ -26,3 +24,8 @@ ROTATED_LOG_MAX_DAYS = 60           # Maximum number of days to keep rotated log
 # Logging level configuration
 # Available levels: DEBUG < INFO < WARN < ERROR
 LOG_LEVEL = "INFO"
+
+# Log rotation conditions and check interval (new parameters)
+LOG_ROTATE_MAX_AGE_DAYS = 30            # Rotate if log started more than 30 days ago
+LOG_ROTATE_MAX_SIZE_MB = 100            # Rotate if log file is larger than 100 MB
+LOG_ROTATE_CHECK_INTERVAL_SECONDS = 300 # Check every 5 minutes (300 seconds)
