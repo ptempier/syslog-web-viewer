@@ -1,5 +1,10 @@
 # Syslog Web Viewer
 
+![alt text](/screenshots/archive.jpeg "Archives")
+![alt text](/screenshots/conf.jpeg "Conf")
+![alt text](/screenshots/files.jpeg "Files")
+![alt text](/screenshots/live.jpeg "Live")
+
 A web-based syslog viewer that provides real-time log monitoring and historical log search capabilities.
 
 ## Features
