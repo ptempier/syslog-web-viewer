@@ -11,6 +11,7 @@ RUN mkdir -p /logserver/templates/
 RUN mkdir -p /var/log/logserver/
 
 COPY ./logserver/*.py /logserver/
+COPY ./logserver/settings.conf /logserver/
 COPY ./logserver/templates/*.html /logserver/templates/
 COPY ./logserver/static/*.css /logserver/static/
 COPY ./logserver/static/*.js /logserver/static/
