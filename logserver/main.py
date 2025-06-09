@@ -2,6 +2,9 @@
 import subprocess
 import sys
 import os
+import signal
+import logging
+from config_manager import config_manager
 
 def script_path(filename):
     # Get the directory where main.py is located and join it with filename
@@ -23,7 +26,16 @@ def start_syslog_ng():
         "/usr/sbin/syslog-ng", "-F", "--no-caps", "--verbose"
     ])
 
+def signal_handler(signum, frame):
+    """Handle SIGHUP to reload configuration."""
+    if signum == signal.SIGHUP:
+        logging.info("Received SIGHUP, reloading configuration...")
+        config_manager.load_config()
+        # TODO: Propagate configuration changes to other components
+
 def main():
+    # Set up signal handler
+    signal.signal(signal.SIGHUP, signal_handler)
     processes = []
     try:
         print("Starting syslog-ng...")
