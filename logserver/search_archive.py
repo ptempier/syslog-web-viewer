@@ -15,9 +15,6 @@ import re
 def get_unique_values(rows, col_idx):
     return sorted(set(row[col_idx] for row in rows if len(row) > col_idx and row[col_idx]))
 
-def is_authenticated():
-    return session.get("logged_in", False)
-
 def parse_datetime(date_str):
     """Parse datetime string that may or may not include seconds."""
     try:

@@ -3,7 +3,7 @@ import logging
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 
 from conf import (
-    SECRET_KEY, LOG_LEVEL
+    SECRET_KEY, LOG_LEVEL, AUTH_USERNAME, AUTH_PASSWORD
 )
 
 # Map our custom levels to Python's logging
@@ -38,7 +38,7 @@ def login():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
-        if username == 'admin' and password == 'admin':  # Change this to use proper authentication
+        if username == AUTH_USERNAME and password == AUTH_PASSWORD:
             session['logged_in'] = True
             return redirect(url_for('index'))
         flash('Invalid username or password')
