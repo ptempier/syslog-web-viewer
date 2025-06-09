@@ -34,6 +34,10 @@ def signal_handler(signum, frame):
         # TODO: Propagate configuration changes to other components
 
 def main():
+    # Write PID to file
+    with open('/tmp/logserver.pid', 'w') as f:
+        f.write(str(os.getpid()))
+
     # Set up signal handler
     signal.signal(signal.SIGHUP, signal_handler)
     processes = []
@@ -61,6 +65,12 @@ def main():
             p.terminate()
         for p in processes:
             p.wait()
+    finally:
+        # Clean up PID file on exit
+        try:
+            os.remove('/tmp/logserver.pid')
+        except:
+            pass
 
 if __name__ == "__main__":
     main()
