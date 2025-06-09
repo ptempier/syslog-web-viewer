@@ -16,28 +16,17 @@ def get_unique_values(rows, col_idx):
 def is_authenticated():
     return session.get("logged_in", False)
 
-def parse_datetime_local_with_offset(dt_str, tz_offset_min):
-    """Parse a local datetime string and convert to UTC using the user's timezone offset in minutes."""
-    if not dt_str:
-        return None
+def parse_datetime(date_str):
+    """Parse datetime string that may or may not include seconds."""
     try:
-        # Parse as naive local time
-        if len(dt_str) == 16:
-            dt = datetime.strptime(dt_str, "%Y-%m-%dT%H:%M")
-        elif len(dt_str) == 19:
-            dt = datetime.strptime(dt_str, "%Y-%m-%dT%H:%M:%S")
-        else:
-            dt = datetime.fromisoformat(dt_str)
-        
-        # Convert to UTC using the timezone offset
-        if tz_offset_min is not None:
-            # Add the offset to convert from local to UTC
-            dt_utc = dt + timedelta(minutes=tz_offset_min)
-            return dt_utc
-        return dt
-    except Exception as e:
-        logging.error(f"Failed to parse datetime string '{dt_str}': {e}")
-        return None
+        # Try parsing with seconds first
+        return datetime.strptime(date_str, '%Y-%m-%dT%H:%M:%S')
+    except ValueError:
+        try:
+            # If that fails, try without seconds
+            return datetime.strptime(date_str, '%Y-%m-%dT%H:%M')
+        except ValueError:
+            raise ValueError(f"Invalid datetime format: {date_str}")
 
 def format_datetime_for_display(dt, tz_offset_min):
     """Format a UTC datetime for display in the user's local timezone."""
@@ -126,8 +115,8 @@ def archive_search():
 
     # Convert to local time for display
     local_tz = pytz.FixedOffset(tz_offset)
-    default_start_date = default_start_date_utc.astimezone(local_tz).strftime('%Y-%m-%dT%H:%M:%S')
-    default_end_date = default_end_date_utc.astimezone(local_tz).strftime('%Y-%m-%dT%H:%M:%S')
+    default_start_date = default_start_date_utc.astimezone(local_tz).strftime('%Y-%m-%dT%H:%M')
+    default_end_date = default_end_date_utc.astimezone(local_tz).strftime('%Y-%m-%dT%H:%M')
 
     # Get dates from request or use defaults
     start_date_str = request.args.get('start_date', default_start_date)
@@ -135,14 +124,14 @@ def archive_search():
 
     # Convert input dates to UTC for comparison
     try:
-        start_date_local = datetime.strptime(start_date_str, '%Y-%m-%dT%H:%M:%S')
+        start_date_local = parse_datetime(start_date_str)
         start_date_local = local_tz.localize(start_date_local)
         start_date_utc = start_date_local.astimezone(utc)
     except ValueError:
         start_date_utc = default_start_date_utc
 
     try:
-        end_date_local = datetime.strptime(end_date_str, '%Y-%m-%dT%H:%M:%S')
+        end_date_local = parse_datetime(end_date_str)
         end_date_local = local_tz.localize(end_date_local)
         end_date_utc = end_date_local.astimezone(utc)
     except ValueError:
@@ -228,12 +217,12 @@ def api_archive():
         tz_offset_min = None
 
     if start_date_str:
-        start_date = parse_datetime_local_with_offset(start_date_str, tz_offset_min)
+        start_date = parse_datetime(start_date_str)
     else:
         start_date = now_utc_minus_5m
 
     if end_date_str:
-        end_date = parse_datetime_local_with_offset(end_date_str, tz_offset_min)
+        end_date = parse_datetime(end_date_str)
     else:
         end_date = now_utc
 

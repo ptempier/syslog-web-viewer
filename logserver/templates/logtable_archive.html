@@ -13,12 +13,12 @@
     <div class="col-auto">
       <label for="start_date" class="form-label mb-0">Start date:</label>
       <input class="form-control form-control-sm" type="datetime-local" id="start_date" name="start_date"
-        value="{{ start_date }}" style="min-width:170px;" />
+        value="{{ start_date }}" style="min-width:170px;" step="60" />
     </div>
     <div class="col-auto">
       <label for="end_date" class="form-label mb-0">End date:</label>
       <input class="form-control form-control-sm" type="datetime-local" id="end_date" name="end_date"
-        value="{{ end_date }}" style="min-width:170px;" />
+        value="{{ end_date }}" style="min-width:170px;" step="60" />
     </div>
     <div class="col-auto">
       <label for="num_lines" class="form-label mb-0">Lines:</label>
@@ -55,7 +55,8 @@
       if (input.value) {
         const date = new Date(input.value);
         const utcDate = new Date(date.getTime() + (date.getTimezoneOffset() * 60000));
-        input.value = utcDate.toISOString().slice(0, 16);
+        // Add seconds to the date string
+        input.value = utcDate.toISOString().slice(0, 16) + ':00';
       }
     }
     
