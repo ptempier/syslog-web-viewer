@@ -1,6 +1,6 @@
 import logging
 from multiprocessing.connection import Client
-from conf import SOCKET_PATH
+from settings import SOCKET_PATH
 
 def fetch_log_array():
     try:

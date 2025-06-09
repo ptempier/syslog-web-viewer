@@ -13,7 +13,7 @@ import signal
 print("rotate.py: Starting...")  # DEBUG
 
 try:
-    from conf import (
+    from settings import (
         LOG_FILE, 
         ROTATED_LOG_PATTERN, ROTATED_LOG_DELETE_OLDEST, ROTATED_LOG_DELETE_MIN_COUNT,
         ROTATED_LOG_TOTAL_MAX_MB, ROTATED_LOG_MAX_DAYS,

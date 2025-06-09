@@ -2,7 +2,7 @@ from flask import request, render_template, session, redirect, url_for, jsonify
 import logging
 import os
 import glob
-from conf import (
+from settings import (
     LOG_FILE, ROTATED_LOG_PATTERN, NUM_LINES_OPTIONS, DEFAULT_NUM_LINES
 )
 import gzip

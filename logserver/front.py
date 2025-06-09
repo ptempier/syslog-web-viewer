@@ -2,7 +2,7 @@
 import logging
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 
-from conf import (
+from settings import (
     SECRET_KEY, LOG_LEVEL, AUTH_USERNAME, AUTH_PASSWORD
 )
 

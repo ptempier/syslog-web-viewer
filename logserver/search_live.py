@@ -1,6 +1,6 @@
 from flask import request, render_template, session, redirect, url_for, jsonify
 import logging
-from conf import (
+from settings import (
     NUM_LINES_OPTIONS, DEFAULT_NUM_LINES, DEFAULT_REFRESH_INTERVAL, REFRESH_INTERVAL_OPTIONS
 )
 from back_client import fetch_log_array

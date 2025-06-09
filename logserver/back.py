@@ -5,7 +5,7 @@ import pyinotify
 from multiprocessing.connection import Listener
 import logging
 import signal
-from conf import LOG_FILE, MAX_ARRAY_SIZE, TRIM_SIZE, SOCKET_PATH, LOG_LEVEL
+from settings import LOG_FILE, MAX_ARRAY_SIZE, TRIM_SIZE, SOCKET_PATH, LOG_LEVEL
 
 # Map our custom levels to Python's logging
 LOG_LEVELS = {
