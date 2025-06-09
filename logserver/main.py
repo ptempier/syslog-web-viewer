@@ -31,7 +31,35 @@ def signal_handler(signum, frame):
     if signum == signal.SIGHUP:
         logging.info("Received SIGHUP, reloading configuration...")
         settings.load_config()
-        # TODO: Propagate configuration changes to other components
+        
+        # Restart child processes to pick up new configuration
+        logging.info("Restarting child processes to apply new configuration...")
+        
+        # Restart back.py
+        try:
+            with open('/tmp/back.pid', 'r') as f:
+                back_pid = int(f.read().strip())
+            os.kill(back_pid, signal.SIGTERM)
+            processes[1] = start_back()  # Restart back.py
+            logging.info("Restarted back.py")
+        except Exception as e:
+            logging.error(f"Failed to restart back.py: {e}")
+        
+        # Restart front.py
+        try:
+            processes[2].terminate()
+            processes[2] = start_front()  # Restart front.py
+            logging.info("Restarted front.py")
+        except Exception as e:
+            logging.error(f"Failed to restart front.py: {e}")
+        
+        # Restart rotate.py
+        try:
+            processes[3].terminate()
+            processes[3] = start_rotate()  # Restart rotate.py
+            logging.info("Restarted rotate.py")
+        except Exception as e:
+            logging.error(f"Failed to restart rotate.py: {e}")
 
 def main():
     # Write PID to file
