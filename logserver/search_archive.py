@@ -25,14 +25,26 @@ def parse_datetime_local_with_offset(dt_str, tz_offset_min):
             dt = datetime.strptime(dt_str, "%Y-%m-%dT%H:%M:%S")
         else:
             dt = datetime.fromisoformat(dt_str)
-        # JS offset: minutes behind UTC (e.g. -120 for UTC+2)
+        
+        # Convert to UTC using the timezone offset
         if tz_offset_min is not None:
-            dt_utc = dt - timedelta(minutes=tz_offset_min)
+            # Add the offset to convert from local to UTC
+            dt_utc = dt + timedelta(minutes=tz_offset_min)
             return dt_utc
         return dt
     except Exception as e:
         logging.error(f"Failed to parse datetime string '{dt_str}': {e}")
         return None
+
+def format_datetime_for_display(dt, tz_offset_min):
+    """Format a UTC datetime for display in the user's local timezone."""
+    if dt is None:
+        return None
+    if tz_offset_min is not None:
+        # Subtract the offset to convert from UTC to local
+        local_dt = dt - timedelta(minutes=tz_offset_min)
+        return local_dt.strftime('%Y-%m-%dT%H:%M')
+    return dt.strftime('%Y-%m-%dT%H:%M')
 
 def find_files_for_dates(start_date, end_date):
     files = []
@@ -108,8 +120,8 @@ def archive_search():
         tz_offset_min = None
 
     # For template: show user's input if present, else default
-    template_start_date = start_date_str or now_utc_minus_5m.strftime('%Y-%m-%dT%H:%M')
-    template_end_date = end_date_str or now_utc.strftime('%Y-%m-%dT%H:%M')
+    template_start_date = start_date_str or format_datetime_for_display(now_utc_minus_5m, tz_offset_min)
+    template_end_date = end_date_str or format_datetime_for_display(now_utc, tz_offset_min)
 
     # For logic: parse as UTC using offset if provided
     if start_date_str:

@@ -38,7 +38,38 @@
     <input type="hidden" id="timezone_offset" name="timezone_offset" value="">
   </div>
   <script>
+    // Set timezone offset when page loads
     document.getElementById('timezone_offset').value = new Date().getTimezoneOffset();
+    
+    // Convert UTC dates to local timezone when page loads
+    function convertUTCToLocal(input) {
+      if (input.value) {
+        const date = new Date(input.value + 'Z'); // Add Z to interpret as UTC
+        const localDate = new Date(date.getTime() - (date.getTimezoneOffset() * 60000));
+        input.value = localDate.toISOString().slice(0, 16); // Format as YYYY-MM-DDTHH:mm
+      }
+    }
+    
+    // Convert local dates to UTC when form submits
+    function convertLocalToUTC(input) {
+      if (input.value) {
+        const date = new Date(input.value);
+        const utcDate = new Date(date.getTime() + (date.getTimezoneOffset() * 60000));
+        input.value = utcDate.toISOString().slice(0, 16);
+      }
+    }
+    
+    // Convert dates when page loads
+    window.addEventListener('load', function() {
+      convertUTCToLocal(document.getElementById('start_date'));
+      convertUTCToLocal(document.getElementById('end_date'));
+    });
+    
+    // Convert dates before form submission
+    document.getElementById('archive-filter-form').addEventListener('submit', function() {
+      convertLocalToUTC(document.getElementById('start_date'));
+      convertLocalToUTC(document.getElementById('end_date'));
+    });
   </script>
   <table class="table table-bordered table-sm align-middle" style="margin-bottom:0;">
     <thead>
