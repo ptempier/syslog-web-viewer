@@ -23,7 +23,7 @@ logging.getLogger('werkzeug').setLevel(logging.ERROR)
 import search_live
 import search_archive
 
-app = Flask(__name__, template_folder=".")
+app = Flask(__name__, template_folder="templates", static_folder="static")
 app.secret_key = SECRET_KEY
 
 def is_authenticated():
