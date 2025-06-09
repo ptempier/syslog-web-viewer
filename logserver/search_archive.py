@@ -41,24 +41,25 @@ def format_datetime_for_display(dt, tz_offset_min):
 def get_file_date_range(filename):
     """Extract date range from log filename.
     Returns (start_date, end_date) or None if no dates found."""
-    # Try to match patterns like YYYY-MM-DD or YYYYMMDD in filename
-    date_pattern = r'(\d{4}[-]?\d{2}[-]?\d{2})'
-    dates = re.findall(date_pattern, filename)
+    # Match pattern like YYYY-MM-DD_HH-MM-SS-to-YYYY-MM-DD_HH-MM-SS
+    date_pattern = r'(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})-to-(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})'
+    match = re.search(date_pattern, filename)
     
-    if not dates:
+    if match:
+        try:
+            start_str = match.group(1).replace('_', 'T').replace('-', ':')
+            end_str = match.group(2).replace('_', 'T').replace('-', ':')
+            start_date = datetime.strptime(start_str, '%Y-%m-%dT%H:%M:%S')
+            end_date = datetime.strptime(end_str, '%Y-%m-%dT%H:%M:%S')
+            return (start_date, end_date)
+        except ValueError:
+            return None
+    
+    # If no date range found, check if it's the current log file
+    if filename.endswith('messages') and not filename.endswith('.gz'):
         return None
     
-    try:
-        # Convert found dates to datetime objects
-        dates = [datetime.strptime(d.replace('-', ''), '%Y%m%d') for d in dates]
-        if len(dates) == 1:
-            # If only one date found, assume it's the start date
-            return (dates[0], dates[0] + timedelta(days=1))
-        else:
-            # If multiple dates found, use first and last
-            return (min(dates), max(dates))
-    except ValueError:
-        return None
+    return None
 
 def find_relevant_log_files(start_date_utc, end_date_utc):
     """Find log files that might contain entries within the date range."""
@@ -69,24 +70,32 @@ def find_relevant_log_files(start_date_utc, end_date_utc):
     
     relevant_files = []
     for file_path in all_files:
-        # Always include the current log file
-        if file_path == LOG_FILE:
+        filename = os.path.basename(file_path)
+        
+        # Always include the current messages file
+        if filename == "messages":
             relevant_files.append(file_path)
             continue
             
         # For rotated files, check if they might contain relevant dates
-        date_range = get_file_date_range(file_path)
-        if date_range:
-            file_start, file_end = date_range
-            # Convert file dates to UTC for comparison
-            file_start = file_start.replace(tzinfo=pytz.UTC)
-            file_end = file_end.replace(tzinfo=pytz.UTC)
+        if not filename.endswith('.gz'):
+            continue
+            
+        # Extract dates from filename like messages.2025-06-09_12-10-21-to-2025-06-09_23-48-40.gz
+        try:
+            date_part = filename.split('.', 1)[1].replace('.gz', '')
+            start_str, end_str = date_part.split('-to-')
+            
+            # Convert filename dates to datetime objects
+            file_start = datetime.strptime(start_str, '%Y-%m-%d_%H-%M-%S')
+            file_end = datetime.strptime(end_str, '%Y-%m-%d_%H-%M-%S')
             
             # Check if date ranges overlap
-            if (file_start <= end_date_utc and file_end >= start_date_utc):
+            if file_start <= end_date_utc and file_end >= start_date_utc:
                 relevant_files.append(file_path)
-        else:
-            # If we can't determine the date range, include the file to be safe
+        except Exception as e:
+            logging.error(f"Error parsing dates from filename {filename}: {e}")
+            # If we can't parse the dates, include the file to be safe
             relevant_files.append(file_path)
     
     return relevant_files
@@ -118,29 +127,32 @@ def parse_log_file_lines(filepath, start_date=None, end_date=None):
 def read_log_file(file_path, start_date_utc, end_date_utc, local_tz, utc):
     """Read and filter log entries from a single file."""
     rows = []
+    open_fn = gzip.open if file_path.endswith('.gz') else open
+    
     try:
-        with open(file_path, 'r') as f:
+        with open_fn(file_path, 'rt', encoding='utf-8', errors='ignore') as f:
             for line in f:
-                try:
-                    parts = line.rstrip('\n').split('|', 7)
-                    while len(parts) < 8:
-                        parts.append("")
-                    
-                    # Parse log date and convert to UTC if needed
-                    log_date = parse_log_date(parts[0])
-                    if log_date.tzinfo is None:
-                        # If date is naive, assume it's in local time and convert to UTC
-                        log_date = local_tz.localize(log_date).astimezone(utc)
-                    else:
-                        # If date already has timezone, just convert to UTC
-                        log_date = log_date.astimezone(utc)
-                    
-                    # Check if date is in range
-                    if start_date_utc <= log_date <= end_date_utc:
-                        rows.append(tuple(parts))
-                except ValueError as e:
-                    logging.error(f"Error parsing log line: {e}")
-                    continue
+                if "|" in line:
+                    try:
+                        parts = line.rstrip('\n').split('|', 7)
+                        while len(parts) < 8:
+                            parts.append("")
+                        
+                        # Parse log date and convert to UTC if needed
+                        log_date = parse_log_date(parts[0])
+                        if log_date.tzinfo is None:
+                            # If date is naive, assume it's in local time and convert to UTC
+                            log_date = local_tz.localize(log_date).astimezone(utc)
+                        else:
+                            # If date already has timezone, just convert to UTC
+                            log_date = log_date.astimezone(utc)
+                        
+                        # Check if date is in range
+                        if start_date_utc <= log_date <= end_date_utc:
+                            rows.append(tuple(parts))
+                    except ValueError as e:
+                        logging.error(f"Error parsing log line: {e}")
+                        continue
     except Exception as e:
         logging.error(f"Error reading log file {file_path}: {e}")
     return rows

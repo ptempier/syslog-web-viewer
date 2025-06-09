@@ -192,16 +192,24 @@ def should_rotate(logfile):
 
 def main():
     print("rotate.py: Running main loop...")  # DEBUG
+    
+    # Write PID to file
+    with open('/tmp/rotate.pid', 'w') as f:
+        f.write(str(os.getpid()))
+    
     logging.info(f"Checking log for rotation every {LOG_ROTATE_CHECK_INTERVAL_SECONDS} seconds.")
     while True:
         try:
             if os.path.exists(LOG_FILE) and should_rotate(LOG_FILE):
                 rotate_log()
             else:
-                logging.debug("No rotation needed.")
+                time.sleep(LOG_ROTATE_CHECK_INTERVAL_SECONDS)
+        except KeyboardInterrupt:
+            print("rotate.py: Received keyboard interrupt, exiting...")
+            break
         except Exception as e:
-            logging.error(f"Exception during log rotation: {e}")
-        time.sleep(LOG_ROTATE_CHECK_INTERVAL_SECONDS)
+            logging.error(f"Error in main loop: {e}")
+            time.sleep(LOG_ROTATE_CHECK_INTERVAL_SECONDS)
 
 if __name__ == "__main__":
     main()
