@@ -13,12 +13,12 @@
           </div>
           <div class="card-body">
             <div class="mb-3">
-              <label for="log_file" class="form-label">Log File</label>
-              <input type="text" class="form-control" id="log_file" name="log_file" value="{{ config['paths']['log_file'] }}">
+              <label for="paths.log_file" class="form-label">Log File</label>
+              <input type="text" class="form-control" id="paths.log_file" name="paths.log_file" value="{{ config['paths']['log_file'] }}">
             </div>
             <div class="mb-3">
-              <label for="socket_path" class="form-label">Socket Path</label>
-              <input type="text" class="form-control" id="socket_path" name="socket_path" value="{{ config['paths']['socket_path'] }}">
+              <label for="paths.socket_path" class="form-label">Socket Path</label>
+              <input type="text" class="form-control" id="paths.socket_path" name="paths.socket_path" value="{{ config['paths']['socket_path'] }}">
             </div>
           </div>
         </div>
@@ -32,12 +32,12 @@
           </div>
           <div class="card-body">
             <div class="mb-3">
-              <label for="max_array_size" class="form-label">Max Buffer Size</label>
-              <input type="number" class="form-control" id="max_array_size" name="max_array_size" value="{{ config['buffer']['max_array_size'] }}">
+              <label for="buffer.max_array_size" class="form-label">Max Buffer Size</label>
+              <input type="number" class="form-control" id="buffer.max_array_size" name="buffer.max_array_size" value="{{ config['buffer']['max_array_size'] }}">
             </div>
             <div class="mb-3">
-              <label for="trim_size" class="form-label">Trim Size</label>
-              <input type="number" class="form-control" id="trim_size" name="trim_size" value="{{ config['buffer']['trim_size'] }}">
+              <label for="buffer.trim_size" class="form-label">Trim Size</label>
+              <input type="number" class="form-control" id="buffer.trim_size" name="buffer.trim_size" value="{{ config['buffer']['trim_size'] }}">
             </div>
           </div>
         </div>
@@ -51,12 +51,12 @@
           </div>
           <div class="card-body">
             <div class="mb-3">
-              <label for="num_lines_options" class="form-label">Number of Lines Options</label>
-              <input type="text" class="form-control" id="num_lines_options" name="num_lines_options" value="{{ config['display']['num_lines_options'] }}">
+              <label for="display.num_lines_options" class="form-label">Number of Lines Options</label>
+              <input type="text" class="form-control" id="display.num_lines_options" name="display.num_lines_options" value="{{ config['display']['num_lines_options'] }}">
             </div>
             <div class="mb-3">
-              <label for="default_num_lines" class="form-label">Default Number of Lines</label>
-              <input type="number" class="form-control" id="default_num_lines" name="default_num_lines" value="{{ config['display']['default_num_lines'] }}">
+              <label for="display.default_num_lines" class="form-label">Default Number of Lines</label>
+              <input type="number" class="form-control" id="display.default_num_lines" name="display.default_num_lines" value="{{ config['display']['default_num_lines'] }}">
             </div>
           </div>
         </div>
@@ -70,12 +70,12 @@
           </div>
           <div class="card-body">
             <div class="mb-3">
-              <label for="refresh_interval_options" class="form-label">Refresh Interval Options</label>
-              <input type="text" class="form-control" id="refresh_interval_options" name="refresh_interval_options" value="{{ config['refresh']['refresh_interval_options'] }}">
+              <label for="refresh.refresh_interval_options" class="form-label">Refresh Interval Options</label>
+              <input type="text" class="form-control" id="refresh.refresh_interval_options" name="refresh.refresh_interval_options" value="{{ config['refresh']['refresh_interval_options'] }}">
             </div>
             <div class="mb-3">
-              <label for="default_refresh_interval" class="form-label">Default Refresh Interval (ms)</label>
-              <input type="number" class="form-control" id="default_refresh_interval" name="default_refresh_interval" value="{{ config['refresh']['default_refresh_interval'] }}">
+              <label for="refresh.default_refresh_interval" class="form-label">Default Refresh Interval (ms)</label>
+              <input type="number" class="form-control" id="refresh.default_refresh_interval" name="refresh.default_refresh_interval" value="{{ config['refresh']['default_refresh_interval'] }}">
             </div>
           </div>
         </div>
@@ -89,16 +89,16 @@
           </div>
           <div class="card-body">
             <div class="mb-3">
-              <label for="username" class="form-label">Username</label>
-              <input type="text" class="form-control" id="username" name="username" value="{{ config['auth']['username'] }}">
+              <label for="auth.username" class="form-label">Username</label>
+              <input type="text" class="form-control" id="auth.username" name="auth.username" value="{{ config['auth']['username'] }}">
             </div>
             <div class="mb-3">
-              <label for="password" class="form-label">Password</label>
-              <input type="password" class="form-control" id="password" name="password" value="{{ config['auth']['password'] }}">
+              <label for="auth.password" class="form-label">Password</label>
+              <input type="password" class="form-control" id="auth.password" name="auth.password" value="{{ config['auth']['password'] }}">
             </div>
             <div class="mb-3">
-              <label for="secret_key" class="form-label">Secret Key</label>
-              <input type="text" class="form-control" id="secret_key" name="secret_key" value="{{ config['auth']['secret_key'] }}">
+              <label for="auth.secret_key" class="form-label">Secret Key</label>
+              <input type="text" class="form-control" id="auth.secret_key" name="auth.secret_key" value="{{ config['auth']['secret_key'] }}">
             </div>
           </div>
         </div>
@@ -112,36 +112,36 @@
           </div>
           <div class="card-body">
             <div class="mb-3">
-              <label for="pattern" class="form-label">Pattern</label>
-              <input type="text" class="form-control" id="pattern" name="pattern" value="{{ config['rotation']['pattern'] }}">
+              <label for="rotation.pattern" class="form-label">Pattern</label>
+              <input type="text" class="form-control" id="rotation.pattern" name="rotation.pattern" value="{{ config['rotation']['pattern'] }}">
             </div>
             <div class="mb-3">
-              <label for="delete_oldest" class="form-label">Delete Oldest</label>
-              <input type="text" class="form-control" id="delete_oldest" name="delete_oldest" value="{{ config['rotation']['delete_oldest'] }}">
+              <label for="rotation.delete_oldest" class="form-label">Delete Oldest</label>
+              <input type="text" class="form-control" id="rotation.delete_oldest" name="rotation.delete_oldest" value="{{ config['rotation']['delete_oldest'] }}">
             </div>
             <div class="mb-3">
-              <label for="delete_min_count" class="form-label">Delete Min Count</label>
-              <input type="number" class="form-control" id="delete_min_count" name="delete_min_count" value="{{ config['rotation']['delete_min_count'] }}">
+              <label for="rotation.delete_min_count" class="form-label">Delete Min Count</label>
+              <input type="number" class="form-control" id="rotation.delete_min_count" name="rotation.delete_min_count" value="{{ config['rotation']['delete_min_count'] }}">
             </div>
             <div class="mb-3">
-              <label for="total_max_mb" class="form-label">Total Max Size (MB)</label>
-              <input type="number" class="form-control" id="total_max_mb" name="total_max_mb" value="{{ config['rotation']['total_max_mb'] }}">
+              <label for="rotation.total_max_mb" class="form-label">Total Max Size (MB)</label>
+              <input type="number" class="form-control" id="rotation.total_max_mb" name="rotation.total_max_mb" value="{{ config['rotation']['total_max_mb'] }}">
             </div>
             <div class="mb-3">
-              <label for="max_days" class="form-label">Max Days</label>
-              <input type="number" class="form-control" id="max_days" name="max_days" value="{{ config['rotation']['max_days'] }}">
+              <label for="rotation.max_days" class="form-label">Max Days</label>
+              <input type="number" class="form-control" id="rotation.max_days" name="rotation.max_days" value="{{ config['rotation']['max_days'] }}">
             </div>
             <div class="mb-3">
-              <label for="max_age_days" class="form-label">Max Age Days</label>
-              <input type="number" class="form-control" id="max_age_days" name="max_age_days" value="{{ config['rotation']['max_age_days'] }}">
+              <label for="rotation.max_age_days" class="form-label">Max Age Days</label>
+              <input type="number" class="form-control" id="rotation.max_age_days" name="rotation.max_age_days" value="{{ config['rotation']['max_age_days'] }}">
             </div>
             <div class="mb-3">
-              <label for="max_size_mb" class="form-label">Max Size (MB)</label>
-              <input type="number" class="form-control" id="max_size_mb" name="max_size_mb" value="{{ config['rotation']['max_size_mb'] }}">
+              <label for="rotation.max_size_mb" class="form-label">Max Size (MB)</label>
+              <input type="number" class="form-control" id="rotation.max_size_mb" name="rotation.max_size_mb" value="{{ config['rotation']['max_size_mb'] }}">
             </div>
             <div class="mb-3">
-              <label for="check_interval_seconds" class="form-label">Check Interval (seconds)</label>
-              <input type="number" class="form-control" id="check_interval_seconds" name="check_interval_seconds" value="{{ config['rotation']['check_interval_seconds'] }}">
+              <label for="rotation.check_interval_seconds" class="form-label">Check Interval (seconds)</label>
+              <input type="number" class="form-control" id="rotation.check_interval_seconds" name="rotation.check_interval_seconds" value="{{ config['rotation']['check_interval_seconds'] }}">
             </div>
           </div>
         </div>
@@ -155,8 +155,8 @@
           </div>
           <div class="card-body">
             <div class="mb-3">
-              <label for="level" class="form-label">Log Level</label>
-              <select class="form-select" id="level" name="level">
+              <label for="logging.level" class="form-label">Log Level</label>
+              <select class="form-select" id="logging.level" name="logging.level">
                 <option value="DEBUG" {% if config['logging']['level'] == 'DEBUG' %}selected{% endif %}>DEBUG</option>
                 <option value="INFO" {% if config['logging']['level'] == 'INFO' %}selected{% endif %}>INFO</option>
                 <option value="WARNING" {% if config['logging']['level'] == 'WARNING' %}selected{% endif %}>WARNING</option>
