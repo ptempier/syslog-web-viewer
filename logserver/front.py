@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import logging
 from flask import Flask, render_template, request, redirect, url_for, session, flash
-
+from functools import wraps
 from settings import (
     SECRET_KEY, LOG_LEVEL, AUTH_USERNAME, AUTH_PASSWORD, settings
 )
@@ -22,6 +22,7 @@ logging.getLogger('werkzeug').setLevel(logging.ERROR)
 # Import search logic from external modules
 import search_live
 import search_archive
+import files
 from utils import is_authenticated
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
@@ -65,6 +66,14 @@ def api_live():
 @app.route('/api/archive')
 def api_archive():
     return search_archive.api_archive()
+
+@app.route('/files')
+def files_route():
+    return files.files_view()
+
+@app.route('/rotate_now', methods=['POST'])
+def rotate_now():
+    return files.rotate_now()
 
 @app.route('/configure', methods=['GET', 'POST'])
 def configure():
