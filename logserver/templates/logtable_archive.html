@@ -44,19 +44,48 @@
     // Convert UTC dates to local timezone when page loads
     function convertUTCToLocal(input) {
       if (input.value) {
-        const date = new Date(input.value + 'Z'); // Add Z to interpret as UTC
-        const localDate = new Date(date.getTime() - (date.getTimezoneOffset() * 60000));
-        input.value = localDate.toISOString().slice(0, 16); // Format as YYYY-MM-DDTHH:mm
+        // Parse the UTC date string and create a Date object
+        const [datePart, timePart] = input.value.split('T');
+        const [year, month, day] = datePart.split('-');
+        const [hours, minutes] = timePart.split(':');
+        
+        // Create a Date object in UTC
+        const date = new Date(Date.UTC(year, month - 1, day, hours, minutes));
+        
+        // Format the date in local timezone
+        const localDate = new Date(date);
+        const year2 = localDate.getFullYear();
+        const month2 = String(localDate.getMonth() + 1).padStart(2, '0');
+        const day2 = String(localDate.getDate()).padStart(2, '0');
+        const hours2 = String(localDate.getHours()).padStart(2, '0');
+        const minutes2 = String(localDate.getMinutes()).padStart(2, '0');
+        
+        input.value = `${year2}-${month2}-${day2}T${hours2}:${minutes2}`;
       }
     }
     
     // Convert local dates to UTC when form submits
     function convertLocalToUTC(input) {
       if (input.value) {
-        const date = new Date(input.value);
-        const utcDate = new Date(date.getTime() + (date.getTimezoneOffset() * 60000));
-        // Add seconds to the date string
-        input.value = utcDate.toISOString().slice(0, 16) + ':00';
+        // Parse the local date string
+        const [datePart, timePart] = input.value.split('T');
+        const [year, month, day] = datePart.split('-');
+        const [hours, minutes] = timePart.split(':');
+        
+        // Create a Date object in local timezone
+        const date = new Date(year, month - 1, day, hours, minutes);
+        
+        // Convert to UTC
+        const utcDate = new Date(date.getTime() - (date.getTimezoneOffset() * 60000));
+        
+        // Format the date in UTC
+        const year2 = utcDate.getUTCFullYear();
+        const month2 = String(utcDate.getUTCMonth() + 1).padStart(2, '0');
+        const day2 = String(utcDate.getUTCDate()).padStart(2, '0');
+        const hours2 = String(utcDate.getUTCHours()).padStart(2, '0');
+        const minutes2 = String(utcDate.getUTCMinutes()).padStart(2, '0');
+        
+        input.value = `${year2}-${month2}-${day2}T${hours2}:${minutes2}:00`;
       }
     }
     
