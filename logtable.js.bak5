@@ -1,0 +1,134 @@
+var refreshTimer = null;
+
+// Called by every dropdown and filter change
+function onDropdownChange() {
+  window.location.href = buildUrlWithFilters();
+}
+
+function getCurrentFilters() {
+  return {
+    host: document.getElementById('host_select') ? document.getElementById('host_select').value : "",
+    facility: document.getElementById('facility_select') ? document.getElementById('facility_select').value : "",
+    level: document.getElementById('level_select') ? document.getElementById('level_select').value : "",
+    program: document.getElementById('program_select') ? document.getElementById('program_select').value : "",
+    pid: document.getElementById('pid_select') ? document.getElementById('pid_select').value : "",
+    refresh: document.getElementById('refresh_select') ? document.getElementById('refresh_select').value : "",
+    num_lines: document.getElementById('num_lines_select') ? document.getElementById('num_lines_select').value : "",
+    msgonly_filter: document.getElementById('msgonly_filter') ? document.getElementById('msgonly_filter').value : "",
+    realtime: document.querySelector('input[name="realtime"]') ? document.querySelector('input[name="realtime"]').value : ""
+  };
+}
+
+function buildUrlWithFilters(extra) {
+  var url = new URL(window.location.href.split('?')[0], window.location.origin);
+  var filters = getCurrentFilters();
+  for (const [key, val] of Object.entries(filters)) {
+    if (val) url.searchParams.set(key, val);
+  }
+  if (extra) {
+    for (const [key, val] of Object.entries(extra)) {
+      url.searchParams.set(key, val);
+    }
+  }
+  return url.toString();
+}
+
+function updateDropdownOptions(selectId, values, selectedValue) {
+  var select = document.getElementById(selectId);
+  if (!select) return;
+  var prevValue = select.value;
+  select.innerHTML = '<option value="">[All]</option>';
+  values.forEach(function(val) {
+    var opt = document.createElement('option');
+    opt.value = val;
+    opt.textContent = val;
+    if (val === (selectedValue || prevValue)) opt.selected = true;
+    select.appendChild(opt);
+  });
+  if (!select.value) select.selectedIndex = 0;
+}
+
+// Error banner for API fetch errors
+function showApiError(msg) {
+  var errDiv = document.getElementById('api-error');
+  if (!errDiv) {
+    errDiv = document.createElement('div');
+    errDiv.id = 'api-error';
+    errDiv.style.position = 'fixed';
+    errDiv.style.top = '0';
+    errDiv.style.left = '0';
+    errDiv.style.width = '100%';
+    errDiv.style.background = '#c00';
+    errDiv.style.color = '#fff';
+    errDiv.style.zIndex = 1000;
+    errDiv.style.padding = '0.5em';
+    errDiv.style.fontWeight = 'bold';
+    errDiv.style.textAlign = 'center';
+    document.body.appendChild(errDiv);
+  }
+  errDiv.textContent = msg + " (auto-retrying...)";
+}
+function hideApiError() {
+  var errDiv = document.getElementById('api-error');
+  if (errDiv) errDiv.remove();
+}
+
+// Real-time poll for table and filter options
+function pollRealtime() {
+  var isRealtime = /[?&]realtime=on\b/.test(window.location.search);
+  if (isRealtime) {
+    function buildRealtimeApiUrl() {
+      var url = new URL("/realtime_api", window.location.origin);
+      var filters = getCurrentFilters();
+      for (const [key, val] of Object.entries(filters)) {
+        if (key !== "refresh" && key !== "realtime" && val) {
+          url.searchParams.set(key, val);
+        }
+      }
+      return url.toString();
+    }
+    function fetchAndUpdate() {
+      fetch(buildRealtimeApiUrl())
+        .then(resp => {
+          if (!resp.ok) throw new Error("HTTP " + resp.status);
+          return resp.json();
+        })
+        .then(data => {
+          var tbody = document.getElementById('log-tbody');
+          tbody.innerHTML = '';
+          data.rows.forEach(function(row) {
+            var tr = document.createElement('tr');
+            row.forEach(function(col) {
+              var td = document.createElement('td');
+              td.textContent = col;
+              tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
+          });
+          document.getElementById('total_rows').textContent = data.total_rows;
+          if (data.filters) {
+            updateDropdownOptions('host_select', data.filters.hosts, getCurrentFilters().host);
+            updateDropdownOptions('facility_select', data.filters.facilities, getCurrentFilters().facility);
+            updateDropdownOptions('level_select', data.filters.levels, getCurrentFilters().level);
+            updateDropdownOptions('program_select', data.filters.programs, getCurrentFilters().program);
+            updateDropdownOptions('pid_select', data.filters.pids, getCurrentFilters().pid);
+          }
+          hideApiError();
+        })
+        .catch(function(err) {
+          showApiError("Could not fetch data from backend: " + err.message);
+        });
+    }
+    setInterval(fetchAndUpdate, 1000);
+  }
+}
+
+// For direct filter form submit (not used but kept for completeness)
+function filterFormSubmit(e) {
+  e.preventDefault();
+  onDropdownChange();
+}
+
+window.onload = function() {
+  pollRealtime();
+};

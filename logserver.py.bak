@@ -1,0 +1,15 @@
+#!/usr/bin/env python3
+import os
+
+from flask import Flask, render_template_string
+
+app = Flask(__name__)
+
+@app.route('/')
+def show_syslog():
+    with open('/var/log/syslog') as f:
+        lines = f.readlines()[-100:]  # Show last 100 lines
+    return render_template_string('<pre>{{ log }}</pre>', log=''.join(lines))
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=7321)

@@ -1,0 +1,79 @@
+ivar refreshTimer = null;
+function getCurrentFilters() {
+  return {
+    host: document.getElementById('host_select') ? document.getElementById('host_select').value : "",
+    facility: document.getElementById('facility_select') ? document.getElementById('facility_select').value : "",
+    level: document.getElementById('level_select') ? document.getElementById('level_select').value : "",
+    program: document.getElementById('program_select') ? document.getElementById('program_select').value : "",
+    pid: document.getElementById('pid_select') ? document.getElementById('pid_select').value : "",
+    refresh: document.getElementById('refresh_select') ? document.getElementById('refresh_select').value : "",
+    num_lines: document.getElementById('num_lines_select') ? document.getElementById('num_lines_select').value : "",
+    msgonly_filter: document.getElementById('msgonly_filter') ? document.getElementById('msgonly_filter').value : "",
+  };
+}
+function buildUrlWithFilters(extra) {
+  var url = new URL(window.location.href.split('?')[0], window.location.origin);
+  var filters = getCurrentFilters();
+  for (const [key, val] of Object.entries(filters)) {
+    if (val && (val !== "off" || key === "refresh")) {
+      url.searchParams.set(key, val);
+    }
+  }
+  if (extra) {
+    for (const [key, val] of Object.entries(extra)) {
+      url.searchParams.set(key, val);
+    }
+  }
+  return url.toString();
+}
+function setRefreshInterval() {
+  var freq = document.getElementById('refresh_select').value;
+  if (refreshTimer) clearInterval(refreshTimer);
+  if (freq && freq != "off" && freq != "realtime") {
+    refreshTimer = setInterval(function() {
+      window.location.href = buildUrlWithFilters();
+    }, parseInt(freq));
+  }
+  if (freq === "realtime") {
+    window.location.href = buildUrlWithFilters({realtime: "on", refresh: ""});
+  } else {
+    var url = buildUrlWithFilters({realtime: ""});
+    window.history.replaceState(null, "", url);
+  }
+}
+function setNumLines() {
+  window.location.href = buildUrlWithFilters();
+}
+function pollRealtime() {
+  if (typeof window.realtime !== "undefined" && window.realtime) {
+    function fetchAndUpdate() {
+      fetch(window.realtime_api_url)
+        .then(resp => resp.json())
+        .then(data => {
+          var tbody = document.getElementById('log-tbody');
+          tbody.innerHTML = '';
+          data.rows.forEach(function(row) {
+            var tr = document.createElement('tr');
+            row.forEach(function(col, idx) {
+              var td = document.createElement('td');
+              td.textContent = col;
+              tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
+          });
+          document.getElementById('total_rows').textContent = data.total_rows;
+        });
+    }
+    setInterval(fetchAndUpdate, 1000);
+  }
+}
+function filterFormSubmit(e) {
+  e.preventDefault();
+  window.location.href = buildUrlWithFilters();
+}
+window.onload = function() {
+  if (typeof window.refresh !== "undefined" && !window.realtime) {
+    if (window.refresh && window.refresh != "off" && window.refresh != "realtime") setRefreshInterval();
+  }
+  pollRealtime();
+};

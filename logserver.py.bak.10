@@ -1,0 +1,582 @@
+#!/usr/bin/env python3
+import subprocess
+from flask import Flask, render_template_string, request, jsonify
+import threading
+import sys
+import time
+import os
+import pyinotify
+
+app = Flask(__name__)
+
+LOG_FILE = "/var/log/messages"
+
+def parse_log_line(line):
+    parts = line.rstrip('\n').split('|', 7)
+    while len(parts) < 8:
+        parts.append("")
+    return tuple(parts)
+
+realtime_lines = []
+realtime_lock = threading.Lock()
+
+NUM_LINES_OPTIONS = [10, 20, 30, 40, 50, 60, 80, 100]
+DEFAULT_NUM_LINES = 30
+
+def tail_logfile_realtime(path, default_num_lines=DEFAULT_NUM_LINES):
+    global realtime_lines
+    wm = pyinotify.WatchManager()
+    mask = pyinotify.IN_MODIFY
+
+    while not os.path.exists(path):
+        time.sleep(0.5)
+
+    def get_tail(num_lines):
+        try:
+            with open(path) as f:
+                lines = f.readlines()[-num_lines:]
+                return [parse_log_line(line) for line in lines]
+        except Exception as e:
+            return [("Error", "", "", "", "", "", "", str(e))]
+    with realtime_lock:
+        realtime_lines[:] = get_tail(default_num_lines)
+
+    class EventHandler(pyinotify.ProcessEvent):
+        def process_IN_MODIFY(self, event):
+            try:
+                with open(path) as f:
+                    f.seek(0, os.SEEK_END)
+                    size = f.tell()
+                    read_size = 20480
+                    f.seek(max(0, size - read_size))
+                    data = f.read()
+                    lines = data.splitlines()[-default_num_lines:]
+                    parsed = [parse_log_line(line) for line in lines]
+                    with realtime_lock:
+                        realtime_lines[:] = parsed
+            except Exception as e:
+                with realtime_lock:
+                    realtime_lines[:] = [("Error", "", "", "", "", "", "", str(e))]
+
+    handler = EventHandler()
+    notifier = pyinotify.ThreadedNotifier(wm, handler)
+    notifier.start()
+    wm.add_watch(path, mask)
+    while True:
+        time.sleep(1)
+
+def get_unique_values(rows, col_idx):
+    return sorted(set(row[col_idx] for row in rows if row[col_idx]))
+
+def start_syslog_ng():
+    process = subprocess.Popen(
+        ["/usr/sbin/syslog-ng", "-F", "--no-caps", "--verbose"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1
+    )
+    for line in process.stdout:
+        print(f"[syslog-ng] {line}", end='', file=sys.stdout, flush=True)
+
+TEMPLATE = '''
+<!doctype html>
+<html>
+  <head>
+    <title>Log Table Viewer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        background: #f4f6fa;
+      }
+      body {
+        font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+        color: #2b2d42;
+        min-height: 100vh;
+        padding: 0;
+        margin: 0;
+      }
+      header {
+        background: #35477d;
+        color: #fff;
+        padding: 1.5em 0 1em 0;
+        text-align: center;
+        margin-bottom: 1.5em;
+        box-shadow: 0 1px 8px rgba(80,80,120,0.07);
+      }
+      h1 {
+        margin: 0 0 0.2em 0;
+        font-size: 2.2em;
+        font-weight: 700;
+        letter-spacing: 1px;
+      }
+      h2 {
+        margin: 0 0 0.5em 0;
+        font-size: 1.2em;
+        font-weight: 400;
+        color: #8d99ae;
+      }
+      #main-container {
+        max-width: 1100px;
+        margin: 0 auto;
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 2px 16px rgba(40,60,80,0.09);
+        padding: 2em 2em 2em 2em;
+        margin-bottom: 2em;
+      }
+      #refresh-bar, #filters-bar {
+        display: flex;
+        gap: 1.2em;
+        align-items: center;
+        margin-bottom: 1em;
+        flex-wrap: wrap;
+      }
+      label {
+        font-weight: 600;
+        color: #35477d;
+        margin-right: 0.3em;
+      }
+      select, input[type="text"] {
+        border: 1px solid #cdd0d9;
+        border-radius: 6px;
+        padding: 0.4em 0.7em;
+        font-size: 1em;
+        background: #f7f9fb;
+        transition: border 0.2s;
+        margin-right: 0.8em;
+      }
+      select:focus, input[type="text"]:focus {
+        border: 1.5px solid #35477d;
+        outline: none;
+        background: #fff;
+      }
+      input[type="submit"] {
+        padding: 0.4em 1.2em;
+        border-radius: 6px;
+        border: none;
+        background: #35477d;
+        color: #fff;
+        font-weight: 600;
+        font-size: 1em;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+      input[type="submit"]:hover {
+        background: #222a4d;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-top: 1.2em;
+      }
+      th, td {
+        border: none;
+        padding: 7px 8px;
+        font-family: "JetBrains Mono", "Roboto Mono", "Consolas", monospace;
+        text-align: left;
+        background: #fff;
+      }
+      th {
+        background: #e8ecf3;
+        font-weight: 600;
+        font-size: 1.02em;
+        color: #35477d;
+        border-bottom: 2px solid #cdd0d9;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+      }
+      tr:nth-child(even) td {
+        background: #f5f7fa;
+      }
+      tr:hover td {
+        background: #f3eecb;
+        transition: background 0.13s;
+      }
+      #total_rows {
+        color: #35477d;
+        font-weight: 600;
+      }
+      @media (max-width: 900px) {
+        #main-container { padding: 0.7em; }
+        th, td { font-size: 0.95em; }
+        #refresh-bar, #filters-bar { flex-direction: column; gap: 0.7em; }
+      }
+      @media (max-width: 600px) {
+        table, thead, tbody, th, td, tr {
+          display: block;
+        }
+        th, td {
+          padding: 9px 5px;
+        }
+        th {
+          background: #e8ecf3;
+          position: static;
+        }
+      }
+    </style>
+    <script>
+      var refreshTimer = null;
+
+      function getCurrentFilters() {
+        return {
+          host: document.getElementById('host_select') ? document.getElementById('host_select').value : "",
+          facility: document.getElementById('facility_select') ? document.getElementById('facility_select').value : "",
+          level: document.getElementById('level_select') ? document.getElementById('level_select').value : "",
+          program: document.getElementById('program_select') ? document.getElementById('program_select').value : "",
+          pid: document.getElementById('pid_select') ? document.getElementById('pid_select').value : "",
+          refresh: document.getElementById('refresh_select') ? document.getElementById('refresh_select').value : "",
+          num_lines: document.getElementById('num_lines_select') ? document.getElementById('num_lines_select').value : "",
+          msgonly_filter: document.getElementById('msgonly_filter') ? document.getElementById('msgonly_filter').value : "",
+          realtime: document.getElementById('realtime_check') ? (document.getElementById('realtime_check').checked ? 'on' : 'off') : 'off'
+        };
+      }
+
+      function buildUrlWithFilters() {
+        var url = new URL(window.location.href.split('?')[0], window.location.origin);
+        var filters = getCurrentFilters();
+        for (const [key, val] of Object.entries(filters)) {
+          if (val && (val !== "off" || key === "refresh")) {
+            url.searchParams.set(key, val);
+          }
+        }
+        return url.toString();
+      }
+
+      function setRefreshInterval() {
+        var freq = document.getElementById('refresh_select').value;
+        if (refreshTimer) clearInterval(refreshTimer);
+        if (freq && freq != "off") {
+          refreshTimer = setInterval(function() {
+            window.location.href = buildUrlWithFilters();
+          }, parseInt(freq));
+        }
+      }
+
+      function setRealtime(checked) {
+        let url = buildUrlWithFilters();
+        if (checked) {
+          url = new URL(url);
+          url.searchParams.set('realtime', 'on');
+          url.searchParams.delete('refresh');
+        } else {
+          url = new URL(url);
+          url.searchParams.set('realtime', 'off');
+        }
+        window.location.href = url.toString();
+      }
+
+      function setNumLines() {
+        window.location.href = buildUrlWithFilters();
+      }
+
+      function filterMsgonlyFormSubmit(e) {
+        e.preventDefault();
+        window.location.href = buildUrlWithFilters();
+      }
+
+      function pollRealtime() {
+        {% if realtime %}
+        function fetchAndUpdate() {
+          fetch("{{ url_for('realtime_api') }}?{{ request.query_string.decode('utf-8') }}")
+            .then(resp => resp.json())
+            .then(data => {
+              var tbody = document.getElementById('log-tbody');
+              tbody.innerHTML = '';
+              data.rows.forEach(function(row) {
+                var tr = document.createElement('tr');
+                row.forEach(function(col) {
+                  var td = document.createElement('td');
+                  td.textContent = col;
+                  tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+              });
+              document.getElementById('total_rows').textContent = data.total_rows;
+              // Also update filter dropdowns with new options if available
+              if (data.filters) {
+                function setOptions(selId, opts, selected) {
+                  var sel = document.getElementById(selId);
+                  if (!sel) return;
+                  var oldVal = sel.value;
+                  sel.innerHTML = '';
+                  var option = document.createElement('option');
+                  option.value = '';
+                  option.textContent = '[All ' + selId.split('_')[0].charAt(0).toUpperCase() + selId.split('_')[0].slice(1) + 's]';
+                  sel.appendChild(option);
+                  opts.forEach(function(v) {
+                    var opt = document.createElement('option');
+                    opt.value = v;
+                    opt.textContent = v;
+                    if (v == selected) opt.selected = true;
+                    sel.appendChild(opt);
+                  });
+                  if (oldVal && sel.querySelector('option[value="'+oldVal+'"]')) {
+                    sel.value = oldVal;
+                  }
+                }
+                setOptions('host_select', data.filters.hosts, "{{ selected_host }}");
+                setOptions('facility_select', data.filters.facilities, "{{ selected_facility }}");
+                setOptions('level_select', data.filters.levels, "{{ selected_level }}");
+                setOptions('program_select', data.filters.programs, "{{ selected_program }}");
+                setOptions('pid_select', data.filters.pids, "{{ selected_pid }}");
+              }
+            });
+        }
+        setInterval(fetchAndUpdate, 1000);
+        {% endif %}
+      }
+
+      window.onload = function() {
+        var freq = "{{ refresh|default('off') }}";
+        if (freq && freq != "off" && "{{ not realtime }}") {
+          setRefreshInterval();
+        }
+        pollRealtime();
+      }
+    </script>
+  </head>
+  <body>
+    <header>
+      <h1>Syslog Web Viewer</h1>
+      <h2>Modern Log Table for <span style="color:#ffe066;">/var/log/messages</span></h2>
+    </header>
+    <div id="main-container">
+      <div id="refresh-bar">
+        <label for="num_lines_select">Number of lines:</label>
+        <select id="num_lines_select" name="num_lines" onchange="setNumLines();">
+          {% for val in num_lines_options %}
+            <option value="{{ val }}" {% if num_lines == val %}selected{% endif %}>{{ val }}</option>
+          {% endfor %}
+        </select>
+        <label for="refresh_select">Refresh frequency:</label>
+        <select id="refresh_select" name="refresh" onchange="this.form.submit(); setRefreshInterval();" {% if realtime %}disabled{% endif %}>
+          <option value="off" {% if refresh == "off" %}selected{% endif %}>Off</option>
+          <option value="2000" {% if refresh == "2000" %}selected{% endif %}>2 sec</option>
+          <option value="5000" {% if refresh == "5000" %}selected{% endif %}>5 sec</option>
+          <option value="10000" {% if refresh == "10000" %}selected{% endif %}>10 sec</option>
+          <option value="30000" {% if refresh == "30000" %}selected{% endif %}>30 sec</option>
+          <option value="60000" {% if refresh == "60000" %}selected{% endif %}>1 min</option>
+        </select>
+        <label for="realtime_check">Realtime (pyinotify):</label>
+        <input type="checkbox" id="realtime_check" name="realtime" value="on" {% if realtime %}checked{% endif %} onchange="setRealtime(this.checked)">
+      </div>
+      <form method="get" id="filters-bar" class="inline" onsubmit="filterMsgonlyFormSubmit(event)">
+        <label for="msgonly_filter">MSGONLY contains:</label>
+        <input type="text" id="msgonly_filter" name="msgonly_filter" value="{{ msgonly_filter|default('') }}" placeholder="Search in MSGONLY...">
+        <input type="submit" value="Filter">
+        {% for param in ['host','facility','level','program','pid','refresh','num_lines','realtime'] %}
+          {% if request.args.get(param) %}
+          <input type="hidden" name="{{ param }}" value="{{ request.args.get(param) }}">
+          {% endif %}
+        {% endfor %}
+      </form>
+      <form method="get">
+        <table>
+          <tr>
+            <th>ISODATE</th>
+            <th>SEQ</th>
+            <th>
+              <form method="get" class="inline">
+                <select id="host_select" name="host" onchange="this.form.submit()">
+                  <option value="">[All Hosts]</option>
+                  {% for v in hosts %}
+                    <option value="{{ v }}" {% if v == selected_host %}selected{% endif %}>{{ v }}</option>
+                  {% endfor %}
+                </select>
+              </form>
+            </th>
+            <th>
+              <form method="get" class="inline">
+                <select id="facility_select" name="facility" onchange="this.form.submit()">
+                  <option value="">[All Facilities]</option>
+                  {% for v in facilities %}
+                    <option value="{{ v }}" {% if v == selected_facility %}selected{% endif %}>{{ v }}</option>
+                  {% endfor %}
+                </select>
+              </form>
+            </th>
+            <th>
+              <form method="get" class="inline">
+                <select id="level_select" name="level" onchange="this.form.submit()">
+                  <option value="">[All Levels]</option>
+                  {% for v in levels %}
+                    <option value="{{ v }}" {% if v == selected_level %}selected{% endif %}>{{ v }}</option>
+                  {% endfor %}
+                </select>
+              </form>
+            </th>
+            <th>
+              <form method="get" class="inline">
+                <select id="program_select" name="program" onchange="this.form.submit()">
+                  <option value="">[All Programs]</option>
+                  {% for v in programs %}
+                    <option value="{{ v }}" {% if v == selected_program %}selected{% endif %}>{{ v }}</option>
+                  {% endfor %}
+                </select>
+              </form>
+            </th>
+            <th>
+              <form method="get" class="inline">
+                <select id="pid_select" name="pid" onchange="this.form.submit()">
+                  <option value="">[All PIDs]</option>
+                  {% for v in pids %}
+                    <option value="{{ v }}" {% if v == selected_pid %}selected{% endif %}>{{ v }}</option>
+                  {% endfor %}
+                </select>
+              </form>
+            </th>
+            <th>MSGONLY</th>
+          </tr>
+          <tbody id="log-tbody">
+          {% for row in rows %}
+          <tr>
+            {% for col in row %}
+              <td>{{ col }}</td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+        <div style="margin-top:1.1em;">
+          <b>Total log lines loaded: <span id="total_rows">{{ total_rows }}</span></b>
+        </div>
+      </form>
+    </div>
+    <script>pollRealtime();</script>
+  </body>
+</html>
+'''
+
+@app.route('/')
+def show_log_table():
+    log_rows = []
+    realtime = request.args.get('realtime', 'off') == 'on'
+    selected_host = request.args.get('host', '')
+    selected_facility = request.args.get('facility', '')
+    selected_level = request.args.get('level', '')
+    selected_program = request.args.get('program', '')
+    selected_pid = request.args.get('pid', '')
+    refresh = request.args.get('refresh', 'off')
+    msgonly_filter = request.args.get('msgonly_filter', '')
+    try:
+        num_lines = int(request.args.get('num_lines', str(DEFAULT_NUM_LINES)))
+    except Exception:
+        num_lines = DEFAULT_NUM_LINES
+    if num_lines not in NUM_LINES_OPTIONS:
+        num_lines = DEFAULT_NUM_LINES
+
+    if realtime:
+        with realtime_lock:
+            log_rows = list(realtime_lines)[-num_lines:]
+    else:
+        try:
+            with open(LOG_FILE) as f:
+                for line in f.readlines()[-num_lines:]:
+                    log_rows.append(parse_log_line(line))
+        except Exception as e:
+            log_rows = [("Error", "", "", "", "", "", "", str(e))]
+
+    filtered = log_rows
+    if selected_host:
+        filtered = [r for r in filtered if r[2] == selected_host]
+    if selected_facility:
+        filtered = [r for r in filtered if r[3] == selected_facility]
+    if selected_level:
+        filtered = [r for r in filtered if r[4] == selected_level]
+    if selected_program:
+        filtered = [r for r in filtered if r[5] == selected_program]
+    if selected_pid:
+        filtered = [r for r in filtered if r[6] == selected_pid]
+    if msgonly_filter:
+        filtered = [r for r in filtered if msgonly_filter.lower() in r[7].lower()]
+
+    hosts = [v for v in get_unique_values(log_rows, 2) if v]
+    facilities = [v for v in get_unique_values(log_rows, 3) if v]
+    levels = [v for v in get_unique_values(log_rows, 4) if v]
+    programs = [v for v in get_unique_values(log_rows, 5) if v]
+    pids = [v for v in get_unique_values(log_rows, 6) if v]
+
+    return render_template_string(
+        TEMPLATE,
+        rows=filtered,
+        total_rows=len(log_rows),
+        hosts=hosts,
+        facilities=facilities,
+        levels=levels,
+        programs=programs,
+        pids=pids,
+        selected_host=selected_host,
+        selected_facility=selected_facility,
+        selected_level=selected_level,
+        selected_program=selected_program,
+        selected_pid=selected_pid,
+        refresh=refresh,
+        realtime=realtime,
+        num_lines=num_lines,
+        num_lines_options=NUM_LINES_OPTIONS,
+        msgonly_filter=msgonly_filter,
+        request=request
+    )
+
+@app.route('/realtime_api')
+def realtime_api():
+    selected_host = request.args.get('host', '')
+    selected_facility = request.args.get('facility', '')
+    selected_level = request.args.get('level', '')
+    selected_program = request.args.get('program', '')
+    selected_pid = request.args.get('pid', '')
+    msgonly_filter = request.args.get('msgonly_filter', '')
+    try:
+        num_lines = int(request.args.get('num_lines', str(DEFAULT_NUM_LINES)))
+    except Exception:
+        num_lines = DEFAULT_NUM_LINES
+    if num_lines not in NUM_LINES_OPTIONS:
+        num_lines = DEFAULT_NUM_LINES
+
+    with realtime_lock:
+        log_rows = list(realtime_lines)[-num_lines:]
+    filtered = log_rows
+    if selected_host:
+        filtered = [r for r in filtered if r[2] == selected_host]
+    if selected_facility:
+        filtered = [r for r in filtered if r[3] == selected_facility]
+    if selected_level:
+        filtered = [r for r in filtered if r[4] == selected_level]
+    if selected_program:
+        filtered = [r for r in filtered if r[5] == selected_program]
+    if selected_pid:
+        filtered = [r for r in filtered if r[6] == selected_pid]
+    if msgonly_filter:
+        filtered = [r for r in filtered if msgonly_filter.lower() in r[7].lower()]
+
+    hosts = [v for v in get_unique_values(log_rows, 2) if v]
+    facilities = [v for v in get_unique_values(log_rows, 3) if v]
+    levels = [v for v in get_unique_values(log_rows, 4) if v]
+    programs = [v for v in get_unique_values(log_rows, 5) if v]
+    pids = [v for v in get_unique_values(log_rows, 6) if v]
+
+    return jsonify({
+        "rows": filtered,
+        "total_rows": len(log_rows),
+        "filters": {
+            "hosts": hosts,
+            "facilities": facilities,
+            "levels": levels,
+            "programs": programs,
+            "pids": pids,
+        }
+    })
+
+def start_realtime_thread():
+    thread = threading.Thread(target=tail_logfile_realtime, args=(LOG_FILE,DEFAULT_NUM_LINES), daemon=True)
+    thread.start()
+
+if __name__ == '__main__':
+    threading.Thread(target=start_syslog_ng, daemon=True).start()
+    start_realtime_thread()
+    app.run(host='0.0.0.0', port=7321)
