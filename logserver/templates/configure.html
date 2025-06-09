@@ -13,12 +13,12 @@
           </div>
           <div class="card-body">
             <div class="mb-3">
-              <label for="log_path" class="form-label">Log Path</label>
-              <input type="text" class="form-control" id="log_path" name="log_path" value="{{ config['Paths']['log_path'] }}">
+              <label for="log_file" class="form-label">Log File</label>
+              <input type="text" class="form-control" id="log_file" name="log_file" value="{{ config['paths']['log_file'] }}">
             </div>
             <div class="mb-3">
-              <label for="archive_path" class="form-label">Archive Path</label>
-              <input type="text" class="form-control" id="archive_path" name="archive_path" value="{{ config['Paths']['archive_path'] }}">
+              <label for="socket_path" class="form-label">Socket Path</label>
+              <input type="text" class="form-control" id="socket_path" name="socket_path" value="{{ config['paths']['socket_path'] }}">
             </div>
           </div>
         </div>
@@ -32,12 +32,12 @@
           </div>
           <div class="card-body">
             <div class="mb-3">
-              <label for="max_buffer_size" class="form-label">Max Buffer Size</label>
-              <input type="number" class="form-control" id="max_buffer_size" name="max_buffer_size" value="{{ config['Buffer']['max_buffer_size'] }}">
+              <label for="max_array_size" class="form-label">Max Buffer Size</label>
+              <input type="number" class="form-control" id="max_array_size" name="max_array_size" value="{{ config['buffer']['max_array_size'] }}">
             </div>
             <div class="mb-3">
-              <label for="buffer_timeout" class="form-label">Buffer Timeout (seconds)</label>
-              <input type="number" class="form-control" id="buffer_timeout" name="buffer_timeout" value="{{ config['Buffer']['buffer_timeout'] }}">
+              <label for="trim_size" class="form-label">Trim Size</label>
+              <input type="number" class="form-control" id="trim_size" name="trim_size" value="{{ config['buffer']['trim_size'] }}">
             </div>
           </div>
         </div>
@@ -51,12 +51,12 @@
           </div>
           <div class="card-body">
             <div class="mb-3">
-              <label for="max_display_lines" class="form-label">Max Display Lines</label>
-              <input type="number" class="form-control" id="max_display_lines" name="max_display_lines" value="{{ config['Display']['max_display_lines'] }}">
+              <label for="num_lines_options" class="form-label">Number of Lines Options</label>
+              <input type="text" class="form-control" id="num_lines_options" name="num_lines_options" value="{{ config['display']['num_lines_options'] }}">
             </div>
             <div class="mb-3">
-              <label for="max_archive_display_lines" class="form-label">Max Archive Display Lines</label>
-              <input type="number" class="form-control" id="max_archive_display_lines" name="max_archive_display_lines" value="{{ config['Display']['max_archive_display_lines'] }}">
+              <label for="default_num_lines" class="form-label">Default Number of Lines</label>
+              <input type="number" class="form-control" id="default_num_lines" name="default_num_lines" value="{{ config['display']['default_num_lines'] }}">
             </div>
           </div>
         </div>
@@ -70,12 +70,12 @@
           </div>
           <div class="card-body">
             <div class="mb-3">
-              <label for="refresh_interval" class="form-label">Refresh Interval (seconds)</label>
-              <input type="number" class="form-control" id="refresh_interval" name="refresh_interval" value="{{ config['Refresh']['refresh_interval'] }}">
+              <label for="refresh_interval_options" class="form-label">Refresh Interval Options</label>
+              <input type="text" class="form-control" id="refresh_interval_options" name="refresh_interval_options" value="{{ config['refresh']['refresh_interval_options'] }}">
             </div>
             <div class="mb-3">
-              <label for="archive_refresh_interval" class="form-label">Archive Refresh Interval (seconds)</label>
-              <input type="number" class="form-control" id="archive_refresh_interval" name="archive_refresh_interval" value="{{ config['Refresh']['archive_refresh_interval'] }}">
+              <label for="default_refresh_interval" class="form-label">Default Refresh Interval (ms)</label>
+              <input type="number" class="form-control" id="default_refresh_interval" name="default_refresh_interval" value="{{ config['refresh']['default_refresh_interval'] }}">
             </div>
           </div>
         </div>
@@ -89,12 +89,16 @@
           </div>
           <div class="card-body">
             <div class="mb-3">
-              <label for="auth_username" class="form-label">Username</label>
-              <input type="text" class="form-control" id="auth_username" name="auth_username" value="{{ config['Auth']['auth_username'] }}">
+              <label for="username" class="form-label">Username</label>
+              <input type="text" class="form-control" id="username" name="username" value="{{ config['auth']['username'] }}">
             </div>
             <div class="mb-3">
-              <label for="auth_password" class="form-label">Password</label>
-              <input type="password" class="form-control" id="auth_password" name="auth_password" value="{{ config['Auth']['auth_password'] }}">
+              <label for="password" class="form-label">Password</label>
+              <input type="password" class="form-control" id="password" name="password" value="{{ config['auth']['password'] }}">
+            </div>
+            <div class="mb-3">
+              <label for="secret_key" class="form-label">Secret Key</label>
+              <input type="text" class="form-control" id="secret_key" name="secret_key" value="{{ config['auth']['secret_key'] }}">
             </div>
           </div>
         </div>
@@ -108,12 +112,36 @@
           </div>
           <div class="card-body">
             <div class="mb-3">
-              <label for="rotation_interval" class="form-label">Rotation Interval (seconds)</label>
-              <input type="number" class="form-control" id="rotation_interval" name="rotation_interval" value="{{ config['LogRotation']['rotation_interval'] }}">
+              <label for="pattern" class="form-label">Pattern</label>
+              <input type="text" class="form-control" id="pattern" name="pattern" value="{{ config['rotation']['pattern'] }}">
             </div>
             <div class="mb-3">
-              <label for="max_archive_files" class="form-label">Max Archive Files</label>
-              <input type="number" class="form-control" id="max_archive_files" name="max_archive_files" value="{{ config['LogRotation']['max_archive_files'] }}">
+              <label for="delete_oldest" class="form-label">Delete Oldest</label>
+              <input type="text" class="form-control" id="delete_oldest" name="delete_oldest" value="{{ config['rotation']['delete_oldest'] }}">
+            </div>
+            <div class="mb-3">
+              <label for="delete_min_count" class="form-label">Delete Min Count</label>
+              <input type="number" class="form-control" id="delete_min_count" name="delete_min_count" value="{{ config['rotation']['delete_min_count'] }}">
+            </div>
+            <div class="mb-3">
+              <label for="total_max_mb" class="form-label">Total Max Size (MB)</label>
+              <input type="number" class="form-control" id="total_max_mb" name="total_max_mb" value="{{ config['rotation']['total_max_mb'] }}">
+            </div>
+            <div class="mb-3">
+              <label for="max_days" class="form-label">Max Days</label>
+              <input type="number" class="form-control" id="max_days" name="max_days" value="{{ config['rotation']['max_days'] }}">
+            </div>
+            <div class="mb-3">
+              <label for="max_age_days" class="form-label">Max Age Days</label>
+              <input type="number" class="form-control" id="max_age_days" name="max_age_days" value="{{ config['rotation']['max_age_days'] }}">
+            </div>
+            <div class="mb-3">
+              <label for="max_size_mb" class="form-label">Max Size (MB)</label>
+              <input type="number" class="form-control" id="max_size_mb" name="max_size_mb" value="{{ config['rotation']['max_size_mb'] }}">
+            </div>
+            <div class="mb-3">
+              <label for="check_interval_seconds" class="form-label">Check Interval (seconds)</label>
+              <input type="number" class="form-control" id="check_interval_seconds" name="check_interval_seconds" value="{{ config['rotation']['check_interval_seconds'] }}">
             </div>
           </div>
         </div>
@@ -127,13 +155,13 @@
           </div>
           <div class="card-body">
             <div class="mb-3">
-              <label for="log_level" class="form-label">Log Level</label>
-              <select class="form-select" id="log_level" name="log_level">
-                <option value="DEBUG" {% if config['Logging']['log_level'] == 'DEBUG' %}selected{% endif %}>DEBUG</option>
-                <option value="INFO" {% if config['Logging']['log_level'] == 'INFO' %}selected{% endif %}>INFO</option>
-                <option value="WARNING" {% if config['Logging']['log_level'] == 'WARNING' %}selected{% endif %}>WARNING</option>
-                <option value="ERROR" {% if config['Logging']['log_level'] == 'ERROR' %}selected{% endif %}>ERROR</option>
-                <option value="CRITICAL" {% if config['Logging']['log_level'] == 'CRITICAL' %}selected{% endif %}>CRITICAL</option>
+              <label for="level" class="form-label">Log Level</label>
+              <select class="form-select" id="level" name="level">
+                <option value="DEBUG" {% if config['logging']['level'] == 'DEBUG' %}selected{% endif %}>DEBUG</option>
+                <option value="INFO" {% if config['logging']['level'] == 'INFO' %}selected{% endif %}>INFO</option>
+                <option value="WARNING" {% if config['logging']['level'] == 'WARNING' %}selected{% endif %}>WARNING</option>
+                <option value="ERROR" {% if config['logging']['level'] == 'ERROR' %}selected{% endif %}>ERROR</option>
+                <option value="CRITICAL" {% if config['logging']['level'] == 'CRITICAL' %}selected{% endif %}>CRITICAL</option>
               </select>
             </div>
           </div>
