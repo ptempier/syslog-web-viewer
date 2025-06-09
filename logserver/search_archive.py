@@ -119,12 +119,13 @@ def archive_search():
         tz_offset = 0
 
     # Initialize default dates in UTC
-    now_utc = datetime.now(timezone.utc)
-    default_start_date_utc = (now_utc - timedelta(minutes=5))
+    utc = pytz.UTC
+    now_utc = datetime.now(utc)
+    default_start_date_utc = now_utc - timedelta(minutes=5)
     default_end_date_utc = now_utc
 
     # Convert to local time for display
-    local_tz = timezone(timedelta(minutes=tz_offset))
+    local_tz = pytz.FixedOffset(tz_offset)
     default_start_date = default_start_date_utc.astimezone(local_tz).strftime('%Y-%m-%dT%H:%M:%S')
     default_end_date = default_end_date_utc.astimezone(local_tz).strftime('%Y-%m-%dT%H:%M:%S')
 
@@ -136,14 +137,14 @@ def archive_search():
     try:
         start_date_local = datetime.strptime(start_date_str, '%Y-%m-%dT%H:%M:%S')
         start_date_local = local_tz.localize(start_date_local)
-        start_date_utc = start_date_local.astimezone(timezone.utc)
+        start_date_utc = start_date_local.astimezone(utc)
     except ValueError:
         start_date_utc = default_start_date_utc
 
     try:
         end_date_local = datetime.strptime(end_date_str, '%Y-%m-%dT%H:%M:%S')
         end_date_local = local_tz.localize(end_date_local)
-        end_date_utc = end_date_local.astimezone(timezone.utc)
+        end_date_utc = end_date_local.astimezone(utc)
     except ValueError:
         end_date_utc = default_end_date_utc
 
