@@ -114,13 +114,6 @@ def parse_log_file_lines(filepath, start_date=None, end_date=None):
         logging.error(f"Failed to parse archive file {filepath}: {e}")
     return rows
 
-def find_log_files():
-    """Find all log files including rotated ones."""
-    log_dir = os.path.dirname(LOG_FILE)
-    log_base = os.path.basename(LOG_FILE)
-    pattern = os.path.join(log_dir, f"{log_base}*")
-    return sorted(glob.glob(pattern))
-
 def read_log_file(file_path, start_date_utc, end_date_utc, local_tz, utc):
     """Read and filter log entries from a single file."""
     rows = []
