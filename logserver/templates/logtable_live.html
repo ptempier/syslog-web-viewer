@@ -35,11 +35,11 @@
   <table class="table table-bordered table-sm align-middle" style="margin-bottom:0;">
     <thead>
       <tr>
-        <th style="min-width:200px;">ISODATE</th>
+        <th>ISODATE</th>
         <th>HOST</th>
         <th>FACILITY</th>
         <th>LEVEL</th>
-        <th style="min-width:140px;">PROGRAM</th>
+        <th>PROGRAM</th>
         <th>PID</th>
         <th>MESSAGE</th>
       </tr>
@@ -95,11 +95,11 @@
     <tbody>
       {% for row in rows %}
       <tr>
-        <td style="min-width:200px;">{{ row[0] }}</td>
+        <td>{{ row[0] }}</td>
         <td>{{ row[2] }}</td>
         <td>{{ row[3] }}</td>
         <td>{{ row[4] }}</td>
-        <td style="min-width:140px;">{{ row[5] }}</td>
+        <td>{{ row[5] }}</td>
         <td>{{ row[6] }}</td>
         <td>{{ row[7] }}</td>
       </tr>
