@@ -1,14 +1,16 @@
 from flask import request, render_template, session, redirect, url_for, jsonify
 import logging
+import os
+import glob
 from conf import (
     LOG_FILE, ROTATED_LOG_PATTERN, NUM_LINES_OPTIONS, DEFAULT_NUM_LINES
 )
-import glob
 import gzip
 from datetime import datetime, timezone, timedelta
 from back_client import fetch_log_array
 from utils import is_authenticated, get_unique_values
 import pytz
+import re
 
 def get_unique_values(rows, col_idx):
     return sorted(set(row[col_idx] for row in rows if len(row) > col_idx and row[col_idx]))
@@ -28,6 +30,13 @@ def parse_datetime(date_str):
         except ValueError:
             raise ValueError(f"Invalid datetime format: {date_str}")
 
+def parse_log_date(date_str):
+    """Parse the date format from the log buffer."""
+    try:
+        return datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
+    except ValueError:
+        raise ValueError(f"Invalid log date format: {date_str}")
+
 def format_datetime_for_display(dt, tz_offset_min):
     """Format a UTC datetime for display in the user's local timezone."""
     if dt is None:
@@ -38,25 +47,58 @@ def format_datetime_for_display(dt, tz_offset_min):
         return local_dt.strftime('%Y-%m-%dT%H:%M')
     return dt.strftime('%Y-%m-%dT%H:%M')
 
-def find_files_for_dates(start_date, end_date):
-    files = []
-    for fname in glob.glob(ROTATED_LOG_PATTERN):
-        try:
-            base = fname.split("messages.")[1].split(".gz")[0]
-            d1, d2 = base.split("-to-")
-            dt1 = datetime.strptime(d1, "%Y-%m-%d_%H-%M-%S")
-            dt2 = datetime.strptime(d2, "%Y-%m-%d_%H-%M-%S")
-            if (not start_date and not end_date) or \
-               (start_date and end_date and dt2 >= start_date and dt1 <= end_date) or \
-               (start_date and not end_date and dt2 >= start_date) or \
-               (end_date and not start_date and dt1 <= end_date):
-                files.append(fname)
-        except Exception as e:
-            logging.warning(f"Failed to parse rotated log filename '{fname}': {e}")
+def get_file_date_range(filename):
+    """Extract date range from log filename.
+    Returns (start_date, end_date) or None if no dates found."""
+    # Try to match patterns like YYYY-MM-DD or YYYYMMDD in filename
+    date_pattern = r'(\d{4}[-]?\d{2}[-]?\d{2})'
+    dates = re.findall(date_pattern, filename)
+    
+    if not dates:
+        return None
+    
+    try:
+        # Convert found dates to datetime objects
+        dates = [datetime.strptime(d.replace('-', ''), '%Y%m%d') for d in dates]
+        if len(dates) == 1:
+            # If only one date found, assume it's the start date
+            return (dates[0], dates[0] + timedelta(days=1))
+        else:
+            # If multiple dates found, use first and last
+            return (min(dates), max(dates))
+    except ValueError:
+        return None
+
+def find_relevant_log_files(start_date_utc, end_date_utc):
+    """Find log files that might contain entries within the date range."""
+    log_dir = os.path.dirname(LOG_FILE)
+    log_base = os.path.basename(LOG_FILE)
+    pattern = os.path.join(log_dir, f"{log_base}*")
+    all_files = sorted(glob.glob(pattern))
+    
+    relevant_files = []
+    for file_path in all_files:
+        # Always include the current log file
+        if file_path == LOG_FILE:
+            relevant_files.append(file_path)
             continue
-    files.append(LOG_FILE)
-    logging.info(f"Archive search: using files {files} for start_date={start_date}, end_date={end_date}")
-    return files
+            
+        # For rotated files, check if they might contain relevant dates
+        date_range = get_file_date_range(file_path)
+        if date_range:
+            file_start, file_end = date_range
+            # Convert file dates to UTC for comparison
+            file_start = file_start.replace(tzinfo=pytz.UTC)
+            file_end = file_end.replace(tzinfo=pytz.UTC)
+            
+            # Check if date ranges overlap
+            if (file_start <= end_date_utc and file_end >= start_date_utc):
+                relevant_files.append(file_path)
+        else:
+            # If we can't determine the date range, include the file to be safe
+            relevant_files.append(file_path)
+    
+    return relevant_files
 
 def parse_log_file_lines(filepath, start_date=None, end_date=None):
     rows = []
@@ -82,16 +124,42 @@ def parse_log_file_lines(filepath, start_date=None, end_date=None):
         logging.error(f"Failed to parse archive file {filepath}: {e}")
     return rows
 
+def find_log_files():
+    """Find all log files including rotated ones."""
+    log_dir = os.path.dirname(LOG_FILE)
+    log_base = os.path.basename(LOG_FILE)
+    pattern = os.path.join(log_dir, f"{log_base}*")
+    return sorted(glob.glob(pattern))
+
+def read_log_file(file_path, start_date_utc, end_date_utc, local_tz, utc):
+    """Read and filter log entries from a single file."""
+    rows = []
+    try:
+        with open(file_path, 'r') as f:
+            for line in f:
+                try:
+                    parts = line.rstrip('\n').split('|', 7)
+                    while len(parts) < 8:
+                        parts.append("")
+                    
+                    # Parse and convert log date to UTC
+                    log_date = parse_log_date(parts[0])
+                    log_date = local_tz.localize(log_date).astimezone(utc)
+                    
+                    # Check if date is in range
+                    if start_date_utc <= log_date <= end_date_utc:
+                        rows.append(tuple(parts))
+                except ValueError as e:
+                    logging.error(f"Error parsing log line: {e}")
+                    continue
+    except Exception as e:
+        logging.error(f"Error reading log file {file_path}: {e}")
+    return rows
+
 def archive_search():
     if not is_authenticated():
         return redirect(url_for('login'))
     logging.debug(f"HTTP GET /archive request: args={request.args}, remote_addr={request.remote_addr}")
-    buffer_rows, fill_level, max_size = fetch_log_array()
-    hosts = get_unique_values(buffer_rows, 2)
-    facilities = get_unique_values(buffer_rows, 3)
-    levels = get_unique_values(buffer_rows, 4)
-    programs = get_unique_values(buffer_rows, 5)
-    pids = get_unique_values(buffer_rows, 6)
 
     selected_host = request.args.get('host', '')
     selected_facility = request.args.get('facility', '')
@@ -122,19 +190,25 @@ def archive_search():
     start_date_str = request.args.get('start_date', default_start_date)
     end_date_str = request.args.get('end_date', default_end_date)
 
+    logging.debug(f"Input dates - start: {start_date_str}, end: {end_date_str}")
+
     # Convert input dates to UTC for comparison
     try:
         start_date_local = parse_datetime(start_date_str)
         start_date_local = local_tz.localize(start_date_local)
         start_date_utc = start_date_local.astimezone(utc)
-    except ValueError:
+        logging.debug(f"Start date UTC: {start_date_utc}")
+    except ValueError as e:
+        logging.error(f"Error parsing start date: {e}")
         start_date_utc = default_start_date_utc
 
     try:
         end_date_local = parse_datetime(end_date_str)
         end_date_local = local_tz.localize(end_date_local)
         end_date_utc = end_date_local.astimezone(utc)
-    except ValueError:
+        logging.debug(f"End date UTC: {end_date_utc}")
+    except ValueError as e:
+        logging.error(f"Error parsing end date: {e}")
         end_date_utc = default_end_date_utc
 
     try:
@@ -144,7 +218,25 @@ def archive_search():
     if num_lines not in NUM_LINES_OPTIONS:
         num_lines = DEFAULT_NUM_LINES
 
-    log_rows = buffer_rows
+    # Find and read only relevant log files
+    all_rows = []
+    relevant_files = find_relevant_log_files(start_date_utc, end_date_utc)
+    logging.debug(f"Found {len(relevant_files)} relevant log files")
+    
+    for log_file in relevant_files:
+        logging.debug(f"Reading log file: {log_file}")
+        rows = read_log_file(log_file, start_date_utc, end_date_utc, local_tz, utc)
+        all_rows.extend(rows)
+
+    # Get unique values for filters
+    hosts = get_unique_values(all_rows, 2)
+    facilities = get_unique_values(all_rows, 3)
+    levels = get_unique_values(all_rows, 4)
+    programs = get_unique_values(all_rows, 5)
+    pids = get_unique_values(all_rows, 6)
+
+    # Apply filters
+    log_rows = all_rows
     if selected_host:
         log_rows = [r for r in log_rows if r[2] == selected_host]
     if selected_facility:
@@ -158,16 +250,17 @@ def archive_search():
     if msgonly_filter:
         log_rows = [r for r in log_rows if msgonly_filter.lower() in r[7].lower()]
 
-    # Filter by date range in UTC
-    log_rows = [r for r in log_rows if start_date_utc.strftime('%Y-%m-%dT%H:%M:%S') <= r[0] <= end_date_utc.strftime('%Y-%m-%dT%H:%M:%S')]
+    # Sort by date and get the last N lines
+    log_rows.sort(key=lambda x: x[0])
     log_rows = log_rows[-num_lines:]
+    logging.debug(f"After filtering: {len(log_rows)} rows")
 
     return render_template(
         'logtable_archive.html',
         rows=log_rows,
-        total_rows=len(buffer_rows),
-        fill_level=fill_level,
-        max_size=max_size,
+        total_rows=len(all_rows),
+        fill_level=len(all_rows),
+        max_size=len(all_rows),
         hosts=hosts,
         facilities=facilities,
         levels=levels,
