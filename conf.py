@@ -22,3 +22,7 @@ ROTATED_LOG_DELETE_MIN_COUNT = 20   # Minimum number of gz files to keep before 
 
 ROTATED_LOG_TOTAL_MAX_MB = 500      # Maximum total gzipped log size in MB (default 500MB)
 ROTATED_LOG_MAX_DAYS = 60           # Maximum number of days to keep rotated logs (default 60)
+
+# Logging level configuration
+# Available levels: DEBUG < INFO < WARN < ERROR
+LOG_LEVEL = "INFO"

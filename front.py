@@ -6,13 +6,23 @@ from multiprocessing.connection import Client
 import logging
 from conf import (
     SOCKET_PATH, NUM_LINES_OPTIONS, DEFAULT_NUM_LINES,
-    AUTH_USERNAME, AUTH_PASSWORD, SECRET_KEY
+    AUTH_USERNAME, AUTH_PASSWORD, SECRET_KEY, LOG_LEVEL
 )
 
+# Map our custom levels to Python's logging
+LOG_LEVELS = {
+    "DEBUG": logging.DEBUG,
+    "INFO": logging.INFO,
+    "WARN": logging.WARNING,
+    "ERROR": logging.ERROR,
+}
 logging.basicConfig(
-    level=logging.INFO,
+    level=LOG_LEVELS.get(LOG_LEVEL, logging.INFO),
     format="%(asctime)s %(levelname)s [front.py]: %(message)s"
 )
+
+# Suppress Flask/Werkzeug access logs
+logging.getLogger('werkzeug').setLevel(logging.ERROR)
 
 app = Flask(__name__, template_folder=".")
 app.secret_key = SECRET_KEY
@@ -26,7 +36,7 @@ def fetch_log_array():
         lines = resp.get("lines", [])
         fill_level = resp.get("fill_level", len(lines))
         max_size = resp.get("max_size", 1)
-        logging.info(f"Fetched log buffer from back.py (fill: {fill_level}/{max_size})")
+        logging.debug(f"Fetched log buffer from back.py (fill: {fill_level}/{max_size})")
         return lines, fill_level, max_size
     except Exception as e:
         logging.error(f"IPC error fetching log buffer: {e}")
@@ -59,8 +69,9 @@ def logout():
 def show_log_table():
     if not is_authenticated():
         return redirect(url_for('login'))
+    logging.debug(f"HTTP GET / request: args={request.args}, remote_addr={request.remote_addr}")
     buffer_rows, fill_level, max_size = fetch_log_array()
-    logging.info(f"Rendering main log table for request {request.remote_addr}.")
+    logging.debug(f"Rendering main log table for request {request.remote_addr}.")
     hosts = [v for v in get_unique_values(buffer_rows, 2) if v]
     facilities = [v for v in get_unique_values(buffer_rows, 3) if v]
     levels = [v for v in get_unique_values(buffer_rows, 4) if v]
@@ -124,6 +135,7 @@ def show_log_table():
 def api_table():
     if not is_authenticated():
         return jsonify({"error": "unauthorized"}), 401
+    logging.debug(f"HTTP GET /api/table request: args={request.args}, remote_addr={request.remote_addr}")
     buffer_rows, fill_level, max_size = fetch_log_array()
     selected_host = request.args.get('host', '')
     selected_facility = request.args.get('facility', '')
