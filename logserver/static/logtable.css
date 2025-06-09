@@ -137,13 +137,12 @@ header .nav-link:hover {
 
 /* Column widths */
 th:nth-child(1), td:nth-child(1) { width: 24em; min-width: 24em; max-width: 24em; }   /* ISODATE: 2025-06-09T18:15:40+02:00 */
-th:nth-child(2), td:nth-child(2) { width: 3.5em; min-width: 3.5em; max-width: 3.5em; }  /* SEQ */
-th:nth-child(3), td:nth-child(3) { width: 14em; min-width: 14em; max-width: 14em; }    /* HOST: 192.168.0.172 */
-th:nth-child(4), td:nth-child(4) { width: 10em; min-width: 10em; max-width: 10em; }    /* FACILITY: myprogramm */
-th:nth-child(5), td:nth-child(5) { width: 8em; min-width: 8em; max-width: 8em; }       /* LEVEL: aazezaez */
-th:nth-child(6), td:nth-child(6) { width: 20em; min-width: 20em; max-width: 20em; }    /* PROGRAM: ventilateur-salon-7946 */
-th:nth-child(7), td:nth-child(7) { width: 7em; min-width: 7em; max-width: 7em; }       /* PID: 100000 */
-th:nth-child(8), td:nth-child(8) { width: auto; min-width: 60px; max-width: 9999px; }  /* MESSAGE: remaining space */
+th:nth-child(2), td:nth-child(2) { width: 14em; min-width: 14em; max-width: 14em; }    /* HOST: 192.168.0.172 */
+th:nth-child(3), td:nth-child(3) { width: 10em; min-width: 10em; max-width: 10em; }    /* FACILITY: myprogramm */
+th:nth-child(4), td:nth-child(4) { width: 8em; min-width: 8em; max-width: 8em; }       /* LEVEL: aazezaez */
+th:nth-child(5), td:nth-child(5) { width: 20em; min-width: 20em; max-width: 20em; }    /* PROGRAM: ventilateur-salon-7946 */
+th:nth-child(6), td:nth-child(6) { width: 7em; min-width: 7em; max-width: 7em; }       /* PID: 100000 */
+th:nth-child(7), td:nth-child(7) { width: auto; min-width: 60px; max-width: 9999px; }  /* MESSAGE: remaining space */
 
 /* Filter row styling */
 .filter-row td {
