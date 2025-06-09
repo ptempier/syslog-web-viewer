@@ -109,8 +109,14 @@ def archive_search():
     selected_program = request.args.get('program', '')
     selected_pid = request.args.get('pid', '')
     msgonly_filter = request.args.get('msgonly_filter', '')
-    start_date = request.args.get('start_date', '')
-    end_date = request.args.get('end_date', '')
+
+    # Initialize default dates
+    now = datetime.now()
+    default_start_date = (now - timedelta(minutes=5)).strftime('%Y-%m-%dT%H:%M:%S')
+    default_end_date = now.strftime('%Y-%m-%dT%H:%M:%S')
+
+    start_date = request.args.get('start_date', default_start_date)
+    end_date = request.args.get('end_date', default_end_date)
 
     try:
         num_lines = int(request.args.get('num_lines', str(DEFAULT_NUM_LINES)))
