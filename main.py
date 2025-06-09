@@ -1,15 +1,21 @@
 #!/usr/bin/env python3
 import subprocess
 import sys
+import os
+
+def script_path(filename):
+    # Get the directory where main.py is located and join it with filename
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    return os.path.join(base_dir, filename)
 
 def start_front():
-    return subprocess.Popen([sys.executable, "front.py"])
+    return subprocess.Popen([sys.executable, script_path("front.py")])
 
 def start_back():
-    return subprocess.Popen([sys.executable, "back.py"])
+    return subprocess.Popen([sys.executable, script_path("back.py")])
 
 def start_rotate():
-    return subprocess.Popen([sys.executable, "rotate.py"])
+    return subprocess.Popen([sys.executable, script_path("rotate.py")])
 
 def start_syslog_ng():
     # Start syslog-ng in the foreground, no caps, verbose

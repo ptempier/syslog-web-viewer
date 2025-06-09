@@ -1,6 +1,6 @@
 # Configuration settings for the log viewer system
 
-LOG_FILE = "/var/log/messages"
+LOG_FILE = "/var/log/logserver/messages"
 MAX_ARRAY_SIZE = 2200
 TRIM_SIZE = 200
 SOCKET_PATH = "/tmp/logbuffer.sock"
@@ -8,13 +8,24 @@ SOCKET_PATH = "/tmp/logbuffer.sock"
 NUM_LINES_OPTIONS = [10, 20, 30, 40, 50, 60, 80, 100]
 DEFAULT_NUM_LINES = 30
 
+# Refresh interval options for live search (in milliseconds)
+REFRESH_INTERVAL_OPTIONS = [
+    (1000, "1 second"),
+    (2000, "2 seconds"),
+    (5000, "5 seconds"),
+    (10000, "10 seconds"),
+    (30000, "30 seconds"),
+    (60000, "1 minute"),
+]
+DEFAULT_REFRESH_INTERVAL = 2000  # 2 seconds
+
 # Authentication (plaintext, for demonstration)
 AUTH_USERNAME = "admin"
 AUTH_PASSWORD = "changeme"
 SECRET_KEY = "changethissecret"  # for Flask session
 
 # Log rotation pattern and retention
-ROTATED_LOG_PATTERN = "/var/log/messages.*-to-*.gz"
+ROTATED_LOG_PATTERN = "/var/log/logserver/messages.*-to-*.gz"
 ROTATED_LOG_DELETE_OLDEST = True    # Set to True to enable deletion of oldest .gz after each rotation
 ROTATED_LOG_DELETE_MIN_COUNT = 20   # Minimum number of gz files to keep before deleting
 

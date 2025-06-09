@@ -3,31 +3,18 @@ services:
 
     hostname: "logserver"
     container_name: "logserver"
-
     environment:
       - "TZ=Europe/Paris"
-      
     image: logserver:1
-
     logging:
       driver: "json-file"
-
-          #ports:
-          #      - "514:514/udp"
-          #      - "9002:80/tcp"
     ports:
         - 7321:7321
         - 7322:7322
         - 7322:7322/udp
     restart: "always"
 
-        #    volumes:
-        #        - /sys/fs/cgroup:/sys/fs/cgroup:ro
-
-        #    tmpfs:
-        #        - /run
-        #    tmpfs:
-        #        - /tmp
-
+    volumes:
+        - /srv/dev-disk-by-uuid-4c33e6c8-4c68-4527-a816-b7e53e6e0cdc/logserver/log/:/var/log/logserver/
 version: "3.6"
 

@@ -4,20 +4,28 @@ RUN dnf --setopt=install_weak_deps='False' install -y syslog-ng
 RUN dnf --setopt=install_weak_deps='False' install -y procps pkill
 #RUN dnf -y install wget curl
 RUN dnf --setopt=install_weak_deps='False' install -y python3-flask python3-inotify
-#COPY ./logserver.py /logserver.py
-COPY ./main.py /logserver.py
-COPY ./front.py /front.py
-COPY ./back.py /back.py
-COPY ./conf.py /conf.py
-COPY ./rotate.py /rotate.py
 
-RUN mkdir -p  /static/
-COPY ./logtable.html /logtable.html
-COPY ./login.html /login.html
-COPY ./logtable.js /static/logtable.js
-COPY ./logtable.css /static/logtable.css
+
+RUN mkdir -p /logserver/
+
+COPY ./main.py  ./front.py  ./back.py  ./conf.py  ./rotate.py  /logserver/
+
+
+COPY ./base.html  ./logtable_live.html  ./search_archive.py  ./search_live.py ./back_client.py /logserver/
+
+
+
+RUN mkdir -p  /logserver/static/
+#RUN mkdir -p  /logserver/templates
+
+RUN mkdir -p /var/log/logserver/
+
+COPY ./logtable.html  ./login.html /logserver/
+COPY ./logtable.js  ./logtable.css /logserver/static/
+#COPY ./logtable_archive.html /logserver/templates/
+COPY ./logtable_archive.html /logserver/
 
 COPY ./syslog-ng.conf  /etc/syslog-ng/syslog-ng.conf
 
-CMD /logserver.py
+CMD /logserver/main.py
 #STOPSIGNAL SIGRTMIN+3
