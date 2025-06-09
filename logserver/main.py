@@ -6,6 +6,9 @@ import signal
 import logging
 from settings import settings
 
+# Global variable to store process references
+processes = []
+
 def script_path(filename):
     # Get the directory where main.py is located and join it with filename
     base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -28,6 +31,7 @@ def start_syslog_ng():
 
 def signal_handler(signum, frame):
     """Handle SIGHUP to reload configuration."""
+    global processes
     if signum == signal.SIGHUP:
         logging.info("Received SIGHUP, reloading configuration...")
         settings.load_config()
@@ -62,13 +66,14 @@ def signal_handler(signum, frame):
             logging.error(f"Failed to restart rotate.py: {e}")
 
 def main():
+    global processes
     # Write PID to file
     with open('/tmp/logserver.pid', 'w') as f:
         f.write(str(os.getpid()))
 
     # Set up signal handler
     signal.signal(signal.SIGHUP, signal_handler)
-    processes = []
+    
     try:
         print("Starting syslog-ng...")
         processes.append(start_syslog_ng())
