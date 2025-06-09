@@ -3,24 +3,19 @@ import logging
 from conf import (
     NUM_LINES_OPTIONS, DEFAULT_NUM_LINES, DEFAULT_REFRESH_INTERVAL, REFRESH_INTERVAL_OPTIONS
 )
-from back_client import fetch_log_array  # You must provide this helper (e.g. move your fetch_log_array here or into a shared util)
-
-def get_unique_values(rows, col_idx):
-    return sorted(set(row[col_idx] for row in rows if row[col_idx]))
-
-def is_authenticated():
-    return session.get("logged_in", False)
+from back_client import fetch_log_array
+from utils import is_authenticated, get_unique_values
 
 def live_search():
     if not is_authenticated():
         return redirect(url_for('login'))
     logging.debug(f"HTTP GET /live request: args={request.args}, remote_addr={request.remote_addr}")
     buffer_rows, fill_level, max_size = fetch_log_array()
-    hosts = [v for v in get_unique_values(buffer_rows, 2) if v]
-    facilities = [v for v in get_unique_values(buffer_rows, 3) if v]
-    levels = [v for v in get_unique_values(buffer_rows, 4) if v]
-    programs = [v for v in get_unique_values(buffer_rows, 5) if v]
-    pids = [v for v in get_unique_values(buffer_rows, 6) if v]
+    hosts = get_unique_values(buffer_rows, 2)
+    facilities = get_unique_values(buffer_rows, 3)
+    levels = get_unique_values(buffer_rows, 4)
+    programs = get_unique_values(buffer_rows, 5)
+    pids = get_unique_values(buffer_rows, 6)
 
     selected_host = request.args.get('host', '')
     selected_facility = request.args.get('facility', '')

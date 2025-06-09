@@ -22,37 +22,32 @@ logging.getLogger('werkzeug').setLevel(logging.ERROR)
 # Import search logic from external modules
 import search_live
 import search_archive
+from utils import is_authenticated
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
 app.secret_key = SECRET_KEY
-
-def is_authenticated():
-    return session.get("logged_in", False)
-
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        username = request.form.get("username", "")
-        password = request.form.get("password", "")
-        from conf import AUTH_USERNAME, AUTH_PASSWORD
-        if username == AUTH_USERNAME and password == AUTH_PASSWORD:
-            session["logged_in"] = True
-            return redirect(url_for('live'))
-        else:
-            flash("Invalid credentials.", "danger")
-    return render_template("login.html")
-
-@app.route('/logout')
-def logout():
-    session.clear()
-    return redirect(url_for('login'))
 
 @app.route('/')
 def index():
     if not is_authenticated():
         return redirect(url_for('login'))
-    # Default to live tab
-    return redirect(url_for('live'))
+    return redirect(url_for('live_search'))
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        if username == 'admin' and password == 'admin':  # Change this to use proper authentication
+            session['logged_in'] = True
+            return redirect(url_for('index'))
+        flash('Invalid username or password')
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session.pop('logged_in', None)
+    return redirect(url_for('login'))
 
 @app.route('/live')
 def live():

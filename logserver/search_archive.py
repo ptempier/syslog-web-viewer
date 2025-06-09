@@ -6,6 +6,8 @@ from conf import (
 import glob
 import gzip
 from datetime import datetime, timezone, timedelta
+from back_client import fetch_log_array
+from utils import is_authenticated, get_unique_values
 
 def get_unique_values(rows, col_idx):
     return sorted(set(row[col_idx] for row in rows if len(row) > col_idx and row[col_idx]))
@@ -93,6 +95,13 @@ def parse_log_file_lines(filepath, start_date=None, end_date=None):
 def archive_search():
     if not is_authenticated():
         return redirect(url_for('login'))
+    logging.debug(f"HTTP GET /archive request: args={request.args}, remote_addr={request.remote_addr}")
+    buffer_rows, fill_level, max_size = fetch_log_array()
+    hosts = get_unique_values(buffer_rows, 2)
+    facilities = get_unique_values(buffer_rows, 3)
+    levels = get_unique_values(buffer_rows, 4)
+    programs = get_unique_values(buffer_rows, 5)
+    pids = get_unique_values(buffer_rows, 6)
 
     selected_host = request.args.get('host', '')
     selected_facility = request.args.get('facility', '')
@@ -100,53 +109,17 @@ def archive_search():
     selected_program = request.args.get('program', '')
     selected_pid = request.args.get('pid', '')
     msgonly_filter = request.args.get('msgonly_filter', '')
-    num_lines = request.args.get('num_lines', str(DEFAULT_NUM_LINES))
+    start_date = request.args.get('start_date', '')
+    end_date = request.args.get('end_date', '')
+
     try:
-        num_lines = int(num_lines)
+        num_lines = int(request.args.get('num_lines', str(DEFAULT_NUM_LINES)))
     except Exception:
         num_lines = DEFAULT_NUM_LINES
     if num_lines not in NUM_LINES_OPTIONS:
         num_lines = DEFAULT_NUM_LINES
 
-    now_utc = datetime.utcnow().replace(second=0, microsecond=0)
-    now_utc_minus_5m = now_utc - timedelta(minutes=5)
-
-    start_date_str = request.args.get('start_date', '')
-    end_date_str = request.args.get('end_date', '')
-    tz_offset_str = request.args.get('timezone_offset', '')
-    try:
-        tz_offset_min = int(tz_offset_str)
-    except Exception:
-        tz_offset_min = None
-
-    # For template: show user's input if present, else default
-    template_start_date = start_date_str or format_datetime_for_display(now_utc_minus_5m, tz_offset_min)
-    template_end_date = end_date_str or format_datetime_for_display(now_utc, tz_offset_min)
-
-    # For logic: parse as UTC using offset if provided
-    if start_date_str:
-        start_date = parse_datetime_local_with_offset(start_date_str, tz_offset_min)
-    else:
-        start_date = now_utc_minus_5m
-
-    if end_date_str:
-        end_date = parse_datetime_local_with_offset(end_date_str, tz_offset_min)
-    else:
-        end_date = now_utc
-
-    files = find_files_for_dates(start_date, end_date)
-    logging.info(f"Archive search selected files: {files}")
-    all_rows = []
-    for f in files:
-        all_rows.extend(parse_log_file_lines(f, start_date, end_date))
-
-    hosts = [v for v in get_unique_values(all_rows, 2) if v]
-    facilities = [v for v in get_unique_values(all_rows, 3) if v]
-    levels = [v for v in get_unique_values(all_rows, 4) if v]
-    programs = [v for v in get_unique_values(all_rows, 5) if v]
-    pids = [v for v in get_unique_values(all_rows, 6) if v]
-
-    log_rows = all_rows
+    log_rows = buffer_rows
     if selected_host:
         log_rows = [r for r in log_rows if r[2] == selected_host]
     if selected_facility:
@@ -159,12 +132,18 @@ def archive_search():
         log_rows = [r for r in log_rows if r[6] == selected_pid]
     if msgonly_filter:
         log_rows = [r for r in log_rows if msgonly_filter.lower() in r[7].lower()]
+    if start_date:
+        log_rows = [r for r in log_rows if r[0] >= start_date]
+    if end_date:
+        log_rows = [r for r in log_rows if r[0] <= end_date]
     log_rows = log_rows[-num_lines:]
 
     return render_template(
         'logtable_archive.html',
         rows=log_rows,
-        total_rows=len(all_rows),
+        total_rows=len(buffer_rows),
+        fill_level=fill_level,
+        max_size=max_size,
         hosts=hosts,
         facilities=facilities,
         levels=levels,
@@ -178,10 +157,8 @@ def archive_search():
         num_lines=num_lines,
         num_lines_options=NUM_LINES_OPTIONS,
         msgonly_filter=msgonly_filter,
-        start_date=template_start_date,
-        end_date=template_end_date,
-        now_utc=now_utc,
-        now_utc_minus_5m=now_utc_minus_5m,
+        start_date=start_date,
+        end_date=end_date,
         request=request
     )
 
