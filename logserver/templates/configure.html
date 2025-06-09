@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+  <h2>Configuration Settings</h2>
+  <form method="POST" action="{{ url_for('configure') }}">
+    <div class="row">
+      <!-- Paths Section -->
+      <div class="col-md-6 mb-4">
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title h5">Paths</h3>
+          </div>
+          <div class="card-body">
+            <div class="mb-3">
+              <label for="log_path" class="form-label">Log Path</label>
+              <input type="text" class="form-control" id="log_path" name="log_path" value="{{ config['Paths']['log_path'] }}">
+            </div>
+            <div class="mb-3">
+              <label for="archive_path" class="form-label">Archive Path</label>
+              <input type="text" class="form-control" id="archive_path" name="archive_path" value="{{ config['Paths']['archive_path'] }}">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Buffer Settings Section -->
+      <div class="col-md-6 mb-4">
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title h5">Buffer Settings</h3>
+          </div>
+          <div class="card-body">
+            <div class="mb-3">
+              <label for="max_buffer_size" class="form-label">Max Buffer Size</label>
+              <input type="number" class="form-control" id="max_buffer_size" name="max_buffer_size" value="{{ config['Buffer']['max_buffer_size'] }}">
+            </div>
+            <div class="mb-3">
+              <label for="buffer_timeout" class="form-label">Buffer Timeout (seconds)</label>
+              <input type="number" class="form-control" id="buffer_timeout" name="buffer_timeout" value="{{ config['Buffer']['buffer_timeout'] }}">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Display Settings Section -->
+      <div class="col-md-6 mb-4">
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title h5">Display Settings</h3>
+          </div>
+          <div class="card-body">
+            <div class="mb-3">
+              <label for="max_display_lines" class="form-label">Max Display Lines</label>
+              <input type="number" class="form-control" id="max_display_lines" name="max_display_lines" value="{{ config['Display']['max_display_lines'] }}">
+            </div>
+            <div class="mb-3">
+              <label for="max_archive_display_lines" class="form-label">Max Archive Display Lines</label>
+              <input type="number" class="form-control" id="max_archive_display_lines" name="max_archive_display_lines" value="{{ config['Display']['max_archive_display_lines'] }}">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Refresh Settings Section -->
+      <div class="col-md-6 mb-4">
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title h5">Refresh Settings</h3>
+          </div>
+          <div class="card-body">
+            <div class="mb-3">
+              <label for="refresh_interval" class="form-label">Refresh Interval (seconds)</label>
+              <input type="number" class="form-control" id="refresh_interval" name="refresh_interval" value="{{ config['Refresh']['refresh_interval'] }}">
+            </div>
+            <div class="mb-3">
+              <label for="archive_refresh_interval" class="form-label">Archive Refresh Interval (seconds)</label>
+              <input type="number" class="form-control" id="archive_refresh_interval" name="archive_refresh_interval" value="{{ config['Refresh']['archive_refresh_interval'] }}">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Authentication Section -->
+      <div class="col-md-6 mb-4">
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title h5">Authentication</h3>
+          </div>
+          <div class="card-body">
+            <div class="mb-3">
+              <label for="auth_username" class="form-label">Username</label>
+              <input type="text" class="form-control" id="auth_username" name="auth_username" value="{{ config['Auth']['auth_username'] }}">
+            </div>
+            <div class="mb-3">
+              <label for="auth_password" class="form-label">Password</label>
+              <input type="password" class="form-control" id="auth_password" name="auth_password" value="{{ config['Auth']['auth_password'] }}">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Log Rotation Section -->
+      <div class="col-md-6 mb-4">
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title h5">Log Rotation</h3>
+          </div>
+          <div class="card-body">
+            <div class="mb-3">
+              <label for="rotation_interval" class="form-label">Rotation Interval (seconds)</label>
+              <input type="number" class="form-control" id="rotation_interval" name="rotation_interval" value="{{ config['LogRotation']['rotation_interval'] }}">
+            </div>
+            <div class="mb-3">
+              <label for="max_archive_files" class="form-label">Max Archive Files</label>
+              <input type="number" class="form-control" id="max_archive_files" name="max_archive_files" value="{{ config['LogRotation']['max_archive_files'] }}">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Logging Section -->
+      <div class="col-md-6 mb-4">
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title h5">Logging</h3>
+          </div>
+          <div class="card-body">
+            <div class="mb-3">
+              <label for="log_level" class="form-label">Log Level</label>
+              <select class="form-select" id="log_level" name="log_level">
+                <option value="DEBUG" {% if config['Logging']['log_level'] == 'DEBUG' %}selected{% endif %}>DEBUG</option>
+                <option value="INFO" {% if config['Logging']['log_level'] == 'INFO' %}selected{% endif %}>INFO</option>
+                <option value="WARNING" {% if config['Logging']['log_level'] == 'WARNING' %}selected{% endif %}>WARNING</option>
+                <option value="ERROR" {% if config['Logging']['log_level'] == 'ERROR' %}selected{% endif %}>ERROR</option>
+                <option value="CRITICAL" {% if config['Logging']['log_level'] == 'CRITICAL' %}selected{% endif %}>CRITICAL</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-4">
+      <button type="submit" class="btn btn-primary">Save Configuration</button>
+    </div>
+  </form>
+</div>
+{% endblock %} 
