@@ -9,6 +9,7 @@ COPY ./main.py /logserver.py
 COPY ./front.py /front.py
 COPY ./back.py /back.py
 COPY ./conf.py /conf.py
+COPY ./rotate.py /rotate.py
 
 RUN mkdir -p  /static/
 COPY ./logtable.html /logtable.html
