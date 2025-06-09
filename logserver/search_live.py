@@ -1,7 +1,7 @@
 from flask import request, render_template, session, redirect, url_for, jsonify
 import logging
 from conf import (
-    NUM_LINES_OPTIONS, DEFAULT_NUM_LINES
+    NUM_LINES_OPTIONS, DEFAULT_NUM_LINES, DEFAULT_REFRESH_INTERVAL, REFRESH_INTERVAL_OPTIONS
 )
 from back_client import fetch_log_array  # You must provide this helper (e.g. move your fetch_log_array here or into a shared util)
 
@@ -27,7 +27,7 @@ def live_search():
     selected_level = request.args.get('level', '')
     selected_program = request.args.get('program', '')
     selected_pid = request.args.get('pid', '')
-    refresh = request.args.get('refresh', 'off')
+    refresh = request.args.get('refresh', str(DEFAULT_REFRESH_INTERVAL))
     msgonly_filter = request.args.get('msgonly_filter', '')
 
     try:
@@ -71,6 +71,7 @@ def live_search():
         refresh=refresh,
         num_lines=num_lines,
         num_lines_options=NUM_LINES_OPTIONS,
+        refresh_interval_options=REFRESH_INTERVAL_OPTIONS,
         msgonly_filter=msgonly_filter,
         request=request
     )
