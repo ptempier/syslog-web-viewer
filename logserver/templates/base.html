@@ -14,7 +14,16 @@
       <div class="d-flex align-items-center">
         <h1>Log Viewer</h1>
         <nav class="ms-auto">
-          <ul class="nav">
+          <ul class="nav nav-tabs">
+            <li class="nav-item">
+              <a class="nav-link {% if request.endpoint == 'live' %}active{% endif %}" href="{{ url_for('live') }}">Live</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link {% if request.endpoint == 'archive' %}active{% endif %}" href="{{ url_for('archive') }}">Archive</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link {% if request.endpoint == 'configure' %}active{% endif %}" href="{{ url_for('configure') }}">Configure</a>
+            </li>
             <li class="nav-item">
               <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
             </li>
