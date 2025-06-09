@@ -1,9 +1,6 @@
 services:
   logserver:
 
-      #    command:
-      #- "/run.sh"
-
     hostname: "logserver"
     container_name: "logserver"
 
@@ -11,7 +8,6 @@ services:
       - "TZ=Europe/Paris"
       
     image: logserver:1
-
 
     logging:
       driver: "json-file"
@@ -26,13 +22,12 @@ services:
     restart: "always"
 
         #    volumes:
-        #      - "/srv/dev-disk-by-uuid-4c33e6c8-4c68-4527-a816-b7e53e6e0cdc/rsyslog:/var/log/net"
         #        - /sys/fs/cgroup:/sys/fs/cgroup:ro
 
-          #    tmpfs:
-          #        - /run
-          #    tmpfs:
-          #        - /tmp
+        #    tmpfs:
+        #        - /run
+        #    tmpfs:
+        #        - /tmp
 
 version: "3.6"
 
