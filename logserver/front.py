@@ -5,7 +5,6 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from settings import (
     SECRET_KEY, LOG_LEVEL, AUTH_USERNAME, AUTH_PASSWORD, settings
 )
-from config_manager import config_manager
 
 # Map our custom levels to Python's logging
 LOG_LEVELS = {
