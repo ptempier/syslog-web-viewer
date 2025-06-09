@@ -31,7 +31,7 @@ app.secret_key = SECRET_KEY
 def index():
     if not is_authenticated():
         return redirect(url_for('login'))
-    return redirect(url_for('live_search'))
+    return redirect(url_for('live'))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
