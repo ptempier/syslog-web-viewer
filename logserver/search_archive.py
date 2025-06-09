@@ -8,7 +8,7 @@ from conf import (
 import gzip
 from datetime import datetime, timezone, timedelta
 from back_client import fetch_log_array
-from utils import is_authenticated, get_unique_values
+from utils import is_authenticated, get_unique_values, parse_log_date
 import pytz
 import re
 
@@ -26,13 +26,6 @@ def parse_datetime(date_str):
             return datetime.strptime(date_str, '%Y-%m-%dT%H:%M')
         except ValueError:
             raise ValueError(f"Invalid datetime format: {date_str}")
-
-def parse_log_date(date_str):
-    """Parse the date format from the log buffer."""
-    try:
-        return datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
-    except ValueError:
-        raise ValueError(f"Invalid log date format: {date_str}")
 
 def format_datetime_for_display(dt, tz_offset_min):
     """Format a UTC datetime for display in the user's local timezone."""
