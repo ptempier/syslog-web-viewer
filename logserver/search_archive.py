@@ -3,11 +3,12 @@ import logging
 import os
 import glob
 from settings import (
-    LOG_FILE, ROTATED_LOG_PATTERN, NUM_LINES_OPTIONS, DEFAULT_NUM_LINES
+    LOG_FILE, ROTATED_LOG_PATTERN, NUM_LINES_OPTIONS, DEFAULT_NUM_LINES,
+    LOG_LEVEL, AUTH_USERNAME, AUTH_PASSWORD
 )
 import gzip
 from datetime import datetime, timezone, timedelta
-from back_client import fetch_log_array
+from back import fetch_log_array
 from utils import is_authenticated, get_unique_values, parse_log_date
 import pytz
 import re

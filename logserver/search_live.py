@@ -1,9 +1,10 @@
 from flask import request, render_template, session, redirect, url_for, jsonify
 import logging
 from settings import (
-    NUM_LINES_OPTIONS, DEFAULT_NUM_LINES, DEFAULT_REFRESH_INTERVAL, REFRESH_INTERVAL_OPTIONS
+    NUM_LINES_OPTIONS, DEFAULT_NUM_LINES, DEFAULT_REFRESH_INTERVAL, REFRESH_INTERVAL_OPTIONS,
+    LOG_FILE, LOG_LEVEL, AUTH_USERNAME, AUTH_PASSWORD
 )
-from back_client import fetch_log_array
+from back import fetch_log_array
 from utils import is_authenticated, get_unique_values
 
 def live_search():
