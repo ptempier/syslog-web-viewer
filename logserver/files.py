@@ -45,4 +45,4 @@ def rotate_now():
         flash('Log rotation triggered successfully', 'success')
     except Exception as e:
         flash(f'Failed to trigger log rotation: {str(e)}', 'danger')
-    return redirect(url_for('files')) 
+    return redirect(url_for('files_route')) 
